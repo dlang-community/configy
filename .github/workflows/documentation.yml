@@ -1,0 +1,61 @@
+# Github worflow to build and upload the documentation to Github pages.
+#
+# Note: This is a separate action to avoid re-triggering it on error
+# in the "main" CI workflow, as errors there are mostly in the testing
+# phase, not the building phase.
+#
+# This only needs to run on Linux, but still need to install dependencies
+# and the compiler because DDOX does a full build
+name: Documentation
+
+on: [push, pull_request]
+
+jobs:
+  doc:
+    name: Build and upload documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+
+      # Checkout this repository and its submodules
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Install the D compiler
+      - name: Prepare compiler
+        uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: ldc-latest
+
+      - name: Build documentation
+        run: |
+          dub build -b ddox
+          # Filter out libraries
+          jq '[ .[] | select(.file|startswith("source/")) ]' docs.json > docs.filtered.json
+          # Generate the HTML to docs
+          dub run ddox -- generate-html --file-name-style=lowerUnderscored docs.filtered.json ./docs/
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: documentation
+          path: docs/
+
+      - name: Deploy documentation
+        if: github.event_name == 'push'
+        run: |
+          # Remove gh-branch if it already exists, check it out
+          git branch -D gh-pages || true
+          git checkout --orphan gh-pages
+          # Remove all staged files - We only need the docs
+          git rm -rf $(git ls-files)
+          # We can have some leftover files (e.g. build)
+          # So add docs (which is only what we need), then `git mv` it.
+          git add docs/
+          git mv -k docs/* ./
+          # Configure user (because persist-credentials does not persist everything)
+          git config --global user.name  "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          # We're done
+          git commit -m "Documentation for commit ${{ github.sha }}"
+          git push -f ${{ github.event.repository.clone_url }} gh-pages:gh-pages

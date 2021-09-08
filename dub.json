@@ -1,0 +1,12 @@
+{
+    "name": "config",
+    "description": "An automatic YAML to struct configuration parser for dlang",
+
+    "authors": [ "Mathias 'Geod24' Lang" ],
+    "license": "MIT",
+    "copyright": "Copyright © 2021, BOSAGORA Foundation",
+
+    "dependencies": {
+	"dyaml": ">=0.8.4"
+    }
+}

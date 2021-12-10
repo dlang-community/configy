@@ -309,11 +309,9 @@ public T parseConfig (T) (
                      T.stringof.paint(Cyan), "validate()".paint(Yellow));
         return result;
     case NodeID.sequence:
-        throw new Exception("Expected to get a mapping (object) at the top level, but got a sequence (array)");
     case NodeID.scalar:
-        throw new Exception("Expected to get a mapping (object) at top level, but got a scalar (value)");
     case NodeID.invalid:
-        throw new Exception(format("Node type is invalid: %s", node));
+        throw new TypeConfigException(node, "mapping (object)", "document root");
     }
 }
 
@@ -477,7 +475,7 @@ private FR.Type parseField (alias FR)
     (Node node, string path, auto ref FR.Type defaultValue, in Context ctx)
 {
     if (node.nodeID == NodeID.invalid)
-        throw new Exception(format("Node type is invalid: %s", node));
+        throw new TypeConfigException(node, "valid", path);
 
     // If we reached this, it means the field is set, so just recurse
     // to peel the type
@@ -500,9 +498,8 @@ private FR.Type parseField (alias FR)
 
     else static if (is(FR.Type == struct))
     {
-        node.enforce(node.nodeID == NodeID.mapping,
-               "Expected '%s' to be a mapping (object), not a %s",
-               path, node.nodeTypeString());
+        if (node.nodeID != NodeID.mapping)
+            throw new TypeConfigException(node, "mapping (object)", path);
         return node.parseMapping!(FR.Type)(path, defaultValue, ctx, null);
     }
 
@@ -520,9 +517,8 @@ private FR.Type parseField (alias FR)
     {
         static if (hasUDA!(FR.Ref, Key))
         {
-            node.enforce(node.nodeID == NodeID.mapping,
-                   "Expected '%s' to be a mapping (object), not a %s",
-                   path, node.nodeTypeString());
+            if (node.nodeID != NodeID.mapping)
+                throw new TypeConfigException(node, "mapping (object)", path);
 
             static assert(getUDAs!(FR.Ref, Key).length == 1,
                           "`" ~ fullyQualifiedName!(FR.Ref) ~
@@ -535,10 +531,11 @@ private FR.Type parseField (alias FR)
             string key = getUDAs!(FR.Ref, Key)[0].name;
             return node.mapping().map!(
                 (Node.Pair pair) {
-                    node.enforce(pair.value.nodeID == NodeID.mapping,
-                           "Field '%s' should be a sequence of mapping (array of objects), " ~
-                           "but it is a sequence of %s",
-                           path, pair.value.nodeTypeString());
+                    if (pair.value.nodeID != NodeID.mapping)
+                        throw new TypeConfigException(
+                            "sequence of " ~ pair.value.nodeTypeString(),
+                            "sequence of mapping (array of objects)",
+                            path, null, node.startMark());
 
                     return pair.value.parseMapping!E(
                         path.addPath(pair.key.as!string),
@@ -547,9 +544,9 @@ private FR.Type parseField (alias FR)
         }
         else
         {
-            node.enforce(node.nodeID == NodeID.sequence,
-                   "Expected '%s' to be a sequence (array), not a %s",
-                   path, node.nodeTypeString());
+            if (node.nodeID != NodeID.sequence)
+                throw new TypeConfigException(node, "sequence (array)", path);
+
             return node.parseSequence!(FR.Type, E)(path, ctx);
         }
     }
@@ -560,9 +557,9 @@ private FR.Type parseField (alias FR)
 /// Parse a node as a scalar
 private T parseScalar (T) (Node node, string path)
 {
-    node.enforce(node.nodeID == NodeID.scalar,
-           "Expected '%s' to be a scalar (value), not a %s",
-           path, node.nodeTypeString());
+    if (node.nodeID != NodeID.scalar)
+        throw new TypeConfigException(node, "scalar (value)", path);
+
     static if (is(T == enum))
         return node.as!string.to!(T);
     else
@@ -588,9 +585,9 @@ private core.time.Duration parseDuration (alias FR)
             // We would get "Warning: Statement is not reachable" otherwise.
             enum hasMatch = true;
 
-            node.enforce(node.nodeID == NodeID.scalar,
-                   "Field '%s' expects an integer value (scalar), not a %s",
-                   path, node.nodeTypeString());
+            if (node.nodeID != NodeID.scalar)
+                throw new TypeConfigException(node, "integer value (scalar)", path);
+
             return core.time.dur!(Suffix[1 .. $])(node.as!long);
         }
     }
@@ -1023,5 +1020,61 @@ unittest
     catch (Exception exc)
     {
         assert(exc.message().length);
+    }
+}
+
+// Test for various type errors
+unittest
+{
+    static struct Mapping
+    {
+        string value;
+    }
+
+    static struct Config
+    {
+        @Optional Mapping map;
+        @Optional Mapping[] array;
+        int scalar;
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("map: Hello World", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(0:5): map: Expected to be of type mapping (object), but is a scalar");
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("map:\n  - Hello\n  - World", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(1:2): map: Expected to be of type mapping (object), but is a sequence");
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("scalar:\n  - Hello\n  - World", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(1:2): scalar: Expected to be of type scalar (value), but is a sequence");
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("scalar:\n  hello:\n    World", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(1:2): scalar: Expected to be of type scalar (value), but is a mapping");
     }
 }

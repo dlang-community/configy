@@ -196,3 +196,46 @@ package final class ConfigExceptionImpl : ConfigException
         sink(this.msg);
     }
 }
+
+/// Exception thrown when the type of the YAML node does not match the D type
+package final class TypeConfigException : ConfigException
+{
+    /// The actual (in the YAML document) type of the node
+    public string actual;
+
+    /// The expected (as specified in the D type) type
+    public string expected;
+
+    /// Constructor
+    public this (Node node, string expected, string path, string key = null,
+                 string file = __FILE__, size_t line = __LINE__)
+        @safe nothrow
+    {
+        this(node.nodeTypeString(), expected, path, key, node.startMark(),
+             file, line);
+    }
+
+    /// Ditto
+    public this (string actual, string expected, string path, string key,
+                 Mark position, string file = __FILE__, size_t line = __LINE__)
+        @safe pure nothrow @nogc
+    {
+        super(path, key, position, file, line);
+        this.actual = actual;
+        this.expected = expected;
+    }
+
+    /// Format the message with or without colors
+    protected override void formatMessage (
+        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+    {
+        const useColors = spec.spec == 'S';
+
+        const fmt = "Expected to be of type %s, but is a %s";
+
+        if (useColors)
+            formattedWrite(sink, fmt, this.expected.paint(Green), this.actual.paint(Red));
+        else
+            formattedWrite(sink, fmt, this.expected, this.actual);
+    }
+}

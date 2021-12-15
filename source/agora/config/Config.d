@@ -718,6 +718,7 @@ private enum isOptional (alias FR) = hasUDA!(FR.Ref, Optional) ||
 
 /// Evaluates to `true` if we should recurse into the struct via `parseDefaultMapping`
 private enum mightBeOptional (alias FR) = is(FR.Type == struct) &&
+    !is(immutable(FR.Type) == immutable(core.time.Duration)) &&
     !hasConverter!(FR.Ref) && !hasFromString!(FR.Type) && !hasStringCtor!(FR.Type);
 
 /// Convenience template to check for the presence of converter(s)
@@ -1192,4 +1193,18 @@ address:
     assert(c2.address.set);
     assert(c2.address.address == "Somewhere");
     assert(c2.address.city == "Over the rainbow");
+}
+
+unittest
+{
+    static struct Config { core.time.Duration timeout; }
+    try
+    {
+        auto result = parseConfigString!Config("timeout:", "/dev/null");
+        assert(0);
+    }
+    catch (Exception exc)
+    {
+        assert(exc.message().length);
+    }
 }

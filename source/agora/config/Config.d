@@ -1072,6 +1072,9 @@ private struct Colored (T)
     /// Hook for `formattedWrite`
     public void toString (scope void delegate (scope const char[]) @safe sink)
     {
+        static if (is(typeof(T.init.length) : size_t))
+            if (this.value.length == 0) return;
+
         formattedWrite(sink, "%s%s%s", this.color, this.value, Reset);
     }
 }

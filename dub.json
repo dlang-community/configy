@@ -6,6 +6,15 @@
     "license": "MIT",
     "copyright": "Copyright © 2021, BOSAGORA Foundation",
 
+    "targetType": "library",
+
+    "configurations": [
+        {
+            "name": "unittest",
+            "dflags": [ "-checkaction=context" ]
+        }
+    ],
+
     "dependencies": {
 	"dyaml": ">=0.8.4"
     }

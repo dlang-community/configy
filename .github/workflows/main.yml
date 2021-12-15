@@ -51,7 +51,7 @@ jobs:
 
     - name: 'Run unittests'
       shell: bash
-      run: dub test --compiler=$DC
+      run: dub test --compiler=$DC -b unittest-cov
 
     - name: 'Upload code coverage'
       uses: codecov/codecov-action@v1

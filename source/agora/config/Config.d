@@ -1012,6 +1012,22 @@ unittest
     }
 }
 
+unittest
+{
+    static struct Config { string required; }
+    try
+        auto result = parseConfigString!Config("value: 24", "/dev/null");
+    catch (ConfigException e)
+    {
+        assert(format("%s", e) ==
+               "<unknown>(0:0): value: Key is not a valid member of this section. There are 1 valid keys: required");
+        assert(format("%S", e) ==
+               format("%s<unknown>%s(%s0%s:%s0%s): %svalue%s: Key is not a valid member of this section. " ~
+                      "There are %s1%s valid keys: %srequired%s", Yellow, Reset, Cyan, Reset, Cyan, Reset,
+                      Yellow, Reset, Yellow, Reset, Green, Reset));
+    }
+}
+
 // Test for various type errors
 unittest
 {

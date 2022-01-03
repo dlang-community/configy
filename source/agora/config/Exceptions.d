@@ -180,14 +180,21 @@ public abstract class ConfigException : Exception
         scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope;
 }
 
-/// Implementation detail
+/// A configuration exception that is only a single message
 package final class ConfigExceptionImpl : ConfigException
 {
     public this (string msg, Mark position,
                  string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow @nogc
     {
-        super(null, null, position, file, line);
+        this(msg, null, null, position, file, line);
+    }
+
+    public this (string msg, string path, string key, Mark position,
+                 string file = __FILE__, size_t line = __LINE__)
+        @safe pure nothrow @nogc
+    {
+        super(path, key, position, file, line);
         this.msg = msg;
     }
 
@@ -238,6 +245,40 @@ package final class TypeConfigException : ConfigException
             formattedWrite(sink, fmt, this.expected.paint(Green), this.actual.paint(Red));
         else
             formattedWrite(sink, fmt, this.expected, this.actual);
+    }
+}
+
+/// Similar to a `TypeConfigException`, but specific to `Duration`
+package final class DurationTypeConfigException : ConfigException
+{
+    /// The list of valid field (a manifest constant, but we want to avoid the dependency)
+    public immutable string[] DurationSuffixes;
+
+    /// Actual type of the node
+    public string actual;
+
+    /// Constructor
+    public this (Node node, string path, immutable string[] DurationSuffixes,
+                 string file = __FILE__, size_t line = __LINE__)
+        @safe nothrow
+    {
+        super(path, null, node.startMark(), file, line);
+        this.actual = node.nodeTypeString();
+        this.DurationSuffixes = DurationSuffixes;
+    }
+
+    /// Format the message with or without colors
+    protected override void formatMessage (
+        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+    {
+        const useColors = spec.spec == 'S';
+
+        const fmt = "Field is of type %s, but expected a mapping with at least one of: %-(%s, %)";
+        if (useColors)
+            formattedWrite(sink, fmt, this.actual.paint(Red),
+                           this.DurationSuffixes.map!(s => s[1 .. $].paint(Green)));
+        else
+            formattedWrite(sink, fmt, this.actual, this.DurationSuffixes.map!(s => s[1 .. $]));
     }
 }
 

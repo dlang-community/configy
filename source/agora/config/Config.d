@@ -583,9 +583,8 @@ private core.time.Duration parseDuration (alias FR)
     // First form, sum all possible fields
     static if (!is(typeof(hasMatch)))
     {
-        node.enforce(node.nodeID == NodeID.mapping,
-               "Field '%s' is a %s, but expected a mapping with at least one of: %-(%s, %)",
-               path.paint(Cyan), node.nodeTypeString(), DurationSuffixes.map!(s => s[1 .. $].paint(Green)));
+        if (node.nodeID != NodeID.mapping)
+            throw new DurationTypeConfigException(node, path, DurationSuffixes);
         auto result = node.parseMapping!DurationPseudoMapping(
             path, DurationPseudoMapping.init, ctx, null);
         bool hasOneSet;
@@ -598,7 +597,8 @@ private core.time.Duration parseDuration (alias FR)
             static if (isOptional!FR)
                 return defaultValue;
             else
-                node.enforce(false, "Field  '%s' expected one of its values to be set", path);
+                throw new ConfigExceptionImpl("Expected one of the field's values to be set",
+                                            path, null, node.startMark());
         }
 
         return result.opCast!Duration();
@@ -1000,15 +1000,18 @@ address:
 
 unittest
 {
-    static struct Config { core.time.Duration timeout; }
+    static struct Nested { core.time.Duration timeout; }
+    static struct Config { Nested node; }
     try
     {
-        auto result = parseConfigString!Config("timeout:", "/dev/null");
+        auto result = parseConfigString!Config("node:\n  timeout:", "/dev/null");
         assert(0);
     }
     catch (Exception exc)
     {
-        assert(exc.message().length);
+        assert(exc.toString() == "<unknown>(1:10): node.timeout: Field is of type scalar, " ~
+               "but expected a mapping with at least one of: weeks, days, hours, minutes, " ~
+               "seconds, msecs, usecs, hnsecs, nsecs");
     }
 }
 

@@ -21,16 +21,36 @@ import dyaml.node;
 import std.format;
 
 /// A convenience wrapper around `enforce` to throw a formatted exception
-package void enforce (E = ConfigException, Args...) (Node node, bool cond,
+package void enforce (E = ConfigExceptionImpl, Args...) (Node node, bool cond,
                                 string fmt, lazy Args args,
                                 string file = __FILE__, size_t line = __LINE__)
 {
     if (!cond)
-        throw new E(format(fmt, args), null, null, node.startMark(), file, line);
+        throw new E(format(fmt, args), node.startMark(), file, line);
 }
 
-/// Exception type thrown by the config parser
-public class ConfigException : Exception
+/*******************************************************************************
+
+    Base exception type thrown by the config parser
+
+    Whenever dealing with Exceptions thrown by the config parser, catching
+    this type will allow to optionally format with colors:
+    ```
+    try
+    {
+        auto conf = parseConfigFile!Config(cmdln);
+        // ...
+    }
+    catch (ConfigException exc)
+    {
+        writeln("Parsing the config file failed:");
+        writelfln(isOutputATTY() ? "%S" : "%s", exc);
+    }
+    ```
+
+*******************************************************************************/
+
+public abstract class ConfigException : Exception
 {
     /// Position at which the error happened
     public Mark yamlPosition;
@@ -43,22 +63,22 @@ public class ConfigException : Exception
     public string key;
 
     /// Constructor
-    public this (string msg, string path, string key, Mark position,
+    public this (string path, string key, Mark position,
                  string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow @nogc
     {
-        super(msg, file, line);
+        super(null, file, line);
         this.path = path;
         this.key = key;
         this.yamlPosition = position;
     }
 
     /// Ditto
-    public this (string msg, string path, Mark position,
+    public this (string path, Mark position,
                  string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow @nogc
     {
-        this(msg, path, null, position, file, line);
+        this(path, null, position, file, line);
     }
 
     /***************************************************************************
@@ -148,7 +168,22 @@ public class ConfigException : Exception
     }
 
     /// Hook called by `toString` to simplify coloring
-    protected void formatMessage (
+    protected abstract void formatMessage (
+        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope;
+}
+
+/// Implementation detail
+package final class ConfigExceptionImpl : ConfigException
+{
+    public this (string msg, Mark position,
+                 string file = __FILE__, size_t line = __LINE__)
+        @safe pure nothrow @nogc
+    {
+        super(null, null, position, file, line);
+        this.msg = msg;
+    }
+
+    protected override void formatMessage (
         scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
     {
         sink(this.msg);

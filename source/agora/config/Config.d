@@ -1070,7 +1070,7 @@ private struct Colored (T)
     private T value;
 
     /// Hook for `formattedWrite`
-    public void toString (scope void delegate (scope const char[]) @safe sink)
+    public void toString (scope void delegate (in char[]) sink)
     {
         static if (is(typeof(T.init.length) : size_t))
             if (this.value.length == 0) return;

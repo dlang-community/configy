@@ -391,7 +391,8 @@ private T parseMapping (T)
             dbgWrite("Found %s (%s.%s) in `fieldDefaults",
                      FR.Name.paint(Cyan), path.paint(Cyan), FName.paint(Cyan));
 
-            node.enforce(!ctx.strict || FName !in node, "'Key' field '%s' is specified twice", path.paint(Yellow));
+            if (ctx.strict && FName in node)
+                throw new ConfigExceptionImpl("'Key' field is specified twice", path, FName, node.startMark());
             return (*ptr).parseField!(FR)(path.addPath(FName), default_, ctx)
                 .dbgWriteRet("Using value '%s' from fieldDefaults for field '%s'",
                              FName.paint(Cyan));
@@ -897,17 +898,6 @@ unittest
 private string addPath (string opath, string newPart)
 {
     return opath.length ? format("%s.%s", opath, newPart) : newPart;
-}
-
-/// Helper mixin for exception types
-private mixin template ExceptionCtor ()
-{
-    public this (string msg, Mark position,
-                 string file = __FILE__, size_t line = __LINE__)
-        @safe pure nothrow @nogc
-    {
-        super(msg, position, file, line);
-    }
 }
 
 /// Basic usage tests

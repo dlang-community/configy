@@ -433,14 +433,7 @@ private T parseMapping (T)
             return Node(aa).parseMapping!(FR.Type)(npath, FR.Default, ctx, null);
         }
         else
-        {
-            const fmt = path.length ?
-                "'%s' was not found in '%s', nor was it provided in command line arguments" :
-                // The extra `%s` is used to allow passing the same arguments to `enforce`
-                "'%s' was not found in document%s, nor was it provided in command line arguments";
-            node.enforce(false, fmt, FR.Name, path);
-            assert(0);
-        }
+            throw new MissingKeyException(path, FName, node.startMark());
     }
 
     debug (ConfigFillerDebug)
@@ -1091,5 +1084,30 @@ unittest
     catch (ConfigException exc)
     {
         assert(exc.toString() == "<unknown>(0:0): valeu: Key is not a valid member of this section. There are 1 valid keys: value");
+    }
+}
+
+// Test for required key
+unittest
+{
+    static struct Nested
+    {
+        string required;
+        string optional = "Default";
+    }
+
+    static struct Config
+    {
+        Nested inner;
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("inner:\n  optional: Not the default value", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(1:2): inner.required: Required key was not found in configuration of command line arguments");
     }
 }

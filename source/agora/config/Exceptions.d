@@ -26,7 +26,7 @@ package void enforce (E = ConfigException, Args...) (Node node, bool cond,
                                 string file = __FILE__, size_t line = __LINE__)
 {
     if (!cond)
-        throw new E(format(fmt, args), node.startMark(), file, line);
+        throw new E(format(fmt, args), null, null, node.startMark(), file, line);
 }
 
 /// Exception type thrown by the config parser
@@ -35,13 +35,30 @@ public class ConfigException : Exception
     /// Position at which the error happened
     public Mark yamlPosition;
 
+    /// The path at which the key resides
+    public string path;
+
+    /// If non-empty, the key under 'path' which triggered the error
+    /// If empty, the key should be considered part of 'path'
+    public string key;
+
     /// Constructor
-    public this (string msg, Mark position,
+    public this (string msg, string path, string key, Mark position,
                  string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow @nogc
     {
         super(msg, file, line);
+        this.path = path;
+        this.key = key;
         this.yamlPosition = position;
+    }
+
+    /// Ditto
+    public this (string msg, string path, Mark position,
+                 string file = __FILE__, size_t line = __LINE__)
+        @safe pure nothrow @nogc
+    {
+        this(msg, path, null, position, file, line);
     }
 
     /***************************************************************************
@@ -92,6 +109,17 @@ public class ConfigException : Exception
         sink(unsignedToTempString(this.yamlPosition.column, buffer));
         if (useColors) sink(Reset);
         sink("): ");
+
+        if (this.path.length || this.key.length)
+        {
+            if (useColors) sink(Yellow);
+            sink(this.path);
+            if (this.path.length && this.key.length)
+                sink(".");
+            sink(this.key);
+            if (useColors) sink(Reset);
+            sink(": ");
+        }
 
         this.formatMessage(sink, spec);
 

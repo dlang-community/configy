@@ -51,33 +51,46 @@ public class ConfigException : Exception
         It is quite likely that errors from this module may be printed directly
         to the end user, who might not have technical knowledge.
 
-        This format the error in a nicer format (with colors if possible),
+        This format the error in a nicer format (e.g. with colors),
         and will additionally provide a stack-trace if the `ConfigFillerDebug`
         `debug` version was provided.
 
+        Format_chars:
+          The default format char ("%s") will print a regular message.
+          If an uppercase 's' is used ("%S"), colors will be used.
+
         Params:
           sink = The sink to send the piece-meal string to
+          spec = See https://dlang.org/phobos/std_format_spec.html
 
     ***************************************************************************/
 
     public override void toString (scope void delegate(in char[]) sink) const scope
     {
+        this.toString(sink, FormatSpec!char("%s"));
+    }
+
+    /// Ditto
+    public void toString (
+        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+    {
         import core.internal.string : unsignedToTempString;
 
+        const useColors = spec.spec == 'S';
         char[20] buffer = void;
 
-        sink(Yellow);
+        if (useColors) sink(Yellow);
         sink(this.yamlPosition.name);
-        sink(Reset);
+        if (useColors) sink(Reset);
 
         sink("(");
-        sink(Cyan);
+        if (useColors) sink(Cyan);
         sink(unsignedToTempString(this.yamlPosition.line, buffer));
-        sink(Reset);
+        if (useColors) sink(Reset);
         sink(":");
-        sink(Cyan);
+        if (useColors) sink(Cyan);
         sink(unsignedToTempString(this.yamlPosition.column, buffer));
-        sink(Reset);
+        if (useColors) sink(Reset);
         sink("): ");
 
         sink(this.msg);

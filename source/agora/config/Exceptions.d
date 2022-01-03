@@ -93,7 +93,7 @@ public class ConfigException : Exception
         if (useColors) sink(Reset);
         sink("): ");
 
-        sink(this.msg);
+        this.formatMessage(sink, spec);
 
         debug (ConfigFillerDebug)
         {
@@ -117,5 +117,12 @@ public class ConfigException : Exception
             // ignore more errors
             catch (Throwable) {}
         }
+    }
+
+    /// Hook called by `toString` to simplify coloring
+    protected void formatMessage (
+        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+    {
+        sink(this.msg);
     }
 }

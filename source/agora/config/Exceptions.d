@@ -83,7 +83,7 @@ public abstract class ConfigException : Exception
 
     /***************************************************************************
 
-        Overrides `Throwable.toString` sink overload
+        Overrides `Throwable.toString` and its sink overload
 
         It is quite likely that errors from this module may be printed directly
         to the end user, who might not have technical knowledge.
@@ -102,6 +102,13 @@ public abstract class ConfigException : Exception
 
     ***************************************************************************/
 
+    public override string toString () scope
+    {
+        // Need to be overriden otherwise the overload is shadowed
+        return super.toString();
+    }
+
+    /// Ditto
     public override void toString (scope void delegate(in char[]) sink) const scope
     {
         this.toString(sink, FormatSpec!char("%s"));

@@ -18,6 +18,7 @@ import agora.config.Utils;
 import dyaml.exception;
 import dyaml.node;
 
+import std.algorithm : map;
 import std.format;
 
 /// A convenience wrapper around `enforce` to throw a formatted exception
@@ -237,5 +238,35 @@ package final class TypeConfigException : ConfigException
             formattedWrite(sink, fmt, this.expected.paint(Green), this.actual.paint(Red));
         else
             formattedWrite(sink, fmt, this.expected, this.actual);
+    }
+}
+
+/// Exception thrown when an unknown key is found in strict mode
+public class UnknownKeyConfigException : ConfigException
+{
+    /// The list of valid field names
+    public immutable string[] fieldNames;
+
+    /// Constructor
+    public this (string path, string key, immutable string[] fieldNames,
+                 Mark position, string file = __FILE__, size_t line = __LINE__)
+        @safe pure nothrow @nogc
+    {
+        super(path, key, position, file, line);
+        this.fieldNames = fieldNames;
+    }
+
+    /// Format the message with or without colors
+    protected override void formatMessage (
+        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+    {
+        const useColors = spec.spec == 'S';
+        const fmt = "Key is not a valid member of this section. There are %s valid keys: %-(%s, %)";
+
+        if (useColors)
+            formattedWrite(sink, fmt, this.fieldNames.length.paint(Yellow),
+                this.fieldNames.map!(f => f.paint(Green)));
+        else
+            formattedWrite(sink, fmt, this.fieldNames.length, this.fieldNames);
     }
 }

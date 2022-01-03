@@ -347,14 +347,10 @@ private T parseMapping (T)
         /// First, check that all the sections found in the mapping are present in the type
         /// If not, the user might have made a typo.
         immutable string[] fieldNames = [ staticMap!(FieldToName!(T).Pred, FieldNameTuple!T) ];
-        // The second message has '%s' which will not format to anything,
-        // because `path` is empty. This allow us to call `ensure` with the same params.
-        const fmt = path.length ? "Unexpected key '%s' in section '%s'. There are %s valid keys: %-(%s, %)" :
-            "Unexpected key '%s' in document root%s. There are %s valid keys: %-(%s, %)";
         foreach (const ref Node key, const ref Node value; node)
-            key.enforce(fieldNames.canFind(key.as!string),
-                         fmt, key.as!string.paint(Red), path.paint(Green),
-                         fieldNames.length.paint(Yellow), fieldNames.map!(f => f.paint(Green)));
+            if (!fieldNames.canFind(key.as!string))
+                throw new UnknownKeyConfigException(
+                    path, key.as!string, fieldNames, key.startMark());
     }
 
     const enabledState = node.isMappingEnabled!T(defaultValue);
@@ -1076,5 +1072,24 @@ unittest
     catch (ConfigException exc)
     {
         assert(exc.toString() == "<unknown>(1:2): scalar: Expected to be of type scalar (value), but is a mapping");
+    }
+}
+
+// Test for strict mode
+unittest
+{
+    static struct Config
+    {
+        string value;
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("valeu: This is a typo", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(0:0): valeu: Key is not a valid member of this section. There are 1 valid keys: value");
     }
 }

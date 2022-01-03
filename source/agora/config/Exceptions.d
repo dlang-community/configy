@@ -21,15 +21,6 @@ import dyaml.node;
 import std.algorithm : map;
 import std.format;
 
-/// A convenience wrapper around `enforce` to throw a formatted exception
-package void enforce (E = ConfigExceptionImpl, Args...) (Node node, bool cond,
-                                string fmt, lazy Args args,
-                                string file = __FILE__, size_t line = __LINE__)
-{
-    if (!cond)
-        throw new E(format(fmt, args), node.startMark(), file, line);
-}
-
 /*******************************************************************************
 
     Base exception type thrown by the config parser

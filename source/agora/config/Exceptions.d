@@ -270,3 +270,22 @@ public class UnknownKeyConfigException : ConfigException
             formattedWrite(sink, fmt, this.fieldNames.length, this.fieldNames);
     }
 }
+
+/// Exception thrown when a required key is missing
+public class MissingKeyException : ConfigException
+{
+    /// Constructor
+    public this (string path, string key, Mark position,
+                 string file = __FILE__, size_t line = __LINE__)
+        @safe pure nothrow @nogc
+    {
+        super(path, key, position, file, line);
+    }
+
+    /// Format the message with or without colors
+    protected override void formatMessage (
+        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+    {
+        sink("Required key was not found in configuration of command line arguments");
+    }
+}

@@ -105,7 +105,8 @@
       field(s). This kind of dependence is hard to account for declaratively,
       and does not affect parsing. For this reason, the preferred way to
       handle those cases is to define a `validate` member method on the
-      top level config struct, which will be called once parsing is completed.
+      affected config struct(s), which will be called once
+      parsing for that mapping is completed.
       If an error is detected, this method should throw an Exception.
 
     Enabled_or_disabled_field:
@@ -297,17 +298,7 @@ public T parseConfig (T) (
             dbgWrite("Parsing config '%s', strict: %s, initPath: %s",
                      fullyQualifiedName!T, strict.paintBool(true),
                      initPath.length ? initPath : "(none)");
-        auto result = node.parseMapping!T(initPath, T.init, const(Context)(cmdln, strict), null);
-        static if (is(typeof(result.validate())))
-        {
-            dbgWrite("%s: Calling `%s` method",
-                     T.stringof.paint(Cyan), "validate()".paint(Green));
-            result.validate();
-        }
-        else
-            dbgWrite("%s: No `%s` method found",
-                     T.stringof.paint(Cyan), "validate()".paint(Yellow));
-        return result;
+        return node.parseMapping!T(initPath, T.init, const(Context)(cmdln, strict), null);
     case NodeID.sequence:
     case NodeID.scalar:
     case NodeID.invalid:
@@ -442,9 +433,33 @@ private T parseMapping (T)
         indent++;
         scope (exit) indent--;
     }
+
+    T doValidation (T result)
+    {
+        static if (is(typeof(result.validate())))
+        {
+            if (enabledState)
+            {
+                dbgWrite("%s: Calling `%s` method",
+                     T.stringof.paint(Cyan), "validate()".paint(Green));
+                result.validate();
+            }
+            else
+            {
+                dbgWrite("%s: Ignoring `%s` method on disabled mapping",
+                         T.stringof.paint(Cyan), "validate()".paint(Green));
+            }
+        }
+        else if (enabledState)
+            dbgWrite("%s: No `%s` method found",
+                     T.stringof.paint(Cyan), "validate()".paint(Yellow));
+
+        return result;
+    }
+
     // This might trigger things like "`this` is not accessible".
     // In this case, the user most likely needs to provide a converter.
-    return T(staticMap!(convert, FieldNameTuple!T));
+    return doValidation(T(staticMap!(convert, FieldNameTuple!T)));
 }
 
 /*******************************************************************************
@@ -1119,4 +1134,57 @@ unittest
     {
         assert(exc.toString() == "<unknown>(1:2): inner.required: Required key was not found in configuration of command line arguments");
     }
+}
+
+// Testing 'validate()' on nested structures
+unittest
+{
+    __gshared int validateCalls0 = 0;
+    __gshared int validateCalls1 = 1;
+    __gshared int validateCalls2 = 2;
+
+    static struct SecondLayer
+    {
+        string value = "default";
+
+        public void validate () const
+        {
+            validateCalls2++;
+        }
+    }
+
+    static struct FirstLayer
+    {
+        bool enabled = true;
+        SecondLayer ltwo;
+
+        public void validate () const
+        {
+            validateCalls1++;
+        }
+    }
+
+    static struct Config
+    {
+        FirstLayer lone;
+
+        public void validate () const
+        {
+            validateCalls0++;
+        }
+    }
+
+    auto r1 = parseConfigString!Config("lone:\n  ltwo:\n    value: Something\n", "/dev/null");
+
+    assert(r1.lone.ltwo.value == "Something");
+    // `validateCalls` are given different value to avoid false-positive
+    // if they are set to 0 / mixed up
+    assert(validateCalls0 == 1);
+    assert(validateCalls1 == 2);
+    assert(validateCalls2 == 3);
+
+    auto r2 = parseConfigString!Config("lone:\n  enabled: false\n", "/dev/null");
+    assert(validateCalls0 == 2); // + 1
+    assert(validateCalls1 == 2); // Other are disabled
+    assert(validateCalls2 == 3);
 }

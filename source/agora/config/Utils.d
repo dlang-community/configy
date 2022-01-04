@@ -2,6 +2,10 @@
 
     Utilities used internally by the config parser.
 
+    Compile this library with `-debug=ConfigFillerDebug` to get verbose output.
+    This can be achieved with `debugVersions` in dub, or by depending on the
+    `debug` configuration provided by `dub.json`.
+
     Copyright:
         Copyright (c) 2019-2021 BOSAGORA Foundation
         All rights reserved.
@@ -49,7 +53,7 @@ debug (ConfigFillerDebug)
     }
 
     /// The current indentation
-    private size_t indent;
+    package size_t indent;
 
     /// Helper for indentation (who needs more than 16 levels of indent?)
     private immutable IndentChars = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";

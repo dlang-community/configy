@@ -490,13 +490,13 @@ private FR.Type parseField (alias FR)
             true);
 
     else static if (hasConverter!(FR.Ref))
-        return node.viaConverter!(FR);
+        return wrapException(node.viaConverter!(FR), path, node.startMark());
 
     else static if (hasFromString!(FR.Type))
-        return FR.Type.fromString(node.as!string);
+        return wrapException(FR.Type.fromString(node.as!string), path, node.startMark());
 
     else static if (hasStringCtor!(FR.Type))
-        return FR.Type(node.as!string);
+        return wrapException(FR.Type(node.as!string), path, node.startMark());
 
     else static if (is(immutable(FR.Type) == immutable(core.time.Duration)))
         return parseDuration!(FR)(node, path, defaultValue, ctx);
@@ -569,6 +569,36 @@ private T parseScalar (T) (Node node, string path)
         return node.as!string.to!(T);
     else
         return node.as!(T);
+}
+
+/*******************************************************************************
+
+    Write a potentially throwing user-provided expression in ConfigException
+
+    The user-provided hooks may throw (e.g. `fromString / the constructor),
+    and the error may or may not be clear. We can't do anything about a bad
+    message but we can wrap the thrown exception in a `ConfigException`
+    to provide the location in the yaml file where the error happened.
+
+    Params:
+      exp = The expression that may throw
+      path = Path within the config file of the field
+      position = Position of the node in the YAML file
+      file = Call site file (otherwise the message would point to this function)
+      line = Call site line (see `file` reasoning)
+
+    Returns:
+      The result of `exp` evaluation.
+
+*******************************************************************************/
+
+private T wrapException (T) (lazy T exp, string path, Mark position,
+    string file = __FILE__, size_t line = __LINE__)
+{
+    try
+        return exp;
+    catch (Exception exc)
+        throw new ConstructionException(exc, path, position, file, line);
 }
 
 /*******************************************************************************
@@ -1187,4 +1217,82 @@ unittest
     assert(validateCalls0 == 2); // + 1
     assert(validateCalls1 == 2); // Other are disabled
     assert(validateCalls2 == 3);
+}
+
+// Test the throwing ctor / fromString
+unittest
+{
+    static struct ThrowingFromString
+    {
+        public static ThrowingFromString fromString (scope const(char)[] value)
+            @safe pure
+        {
+            throw new Exception("Some meaningful error message");
+        }
+
+        public int value;
+    }
+
+    static struct ThrowingCtor
+    {
+        public this (scope const(char)[] value)
+            @safe pure
+        {
+            throw new Exception("Something went wrong... Obviously");
+        }
+
+        public int value;
+    }
+
+    static struct InnerConfig
+    {
+        public int value;
+        @Optional ThrowingCtor ctor;
+        @Optional ThrowingFromString fromString;
+
+        @Converter!int(
+            (Node value) {
+                // We have to trick DMD a bit so that it infers an `int` return
+                // type but doesn't emit a "Statement is not reachable" warning
+                if (value is Node.init || value !is Node.init )
+                    throw new Exception("You shall not pass");
+                return 42;
+            })
+        @Optional int converter;
+    }
+
+    static struct Config
+    {
+        public InnerConfig config;
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("config:\n  value: 42\n  ctor: 42", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(2:8): config.ctor: Something went wrong... Obviously");
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("config:\n  value: 42\n  fromString: 42", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(2:14): config.fromString: Some meaningful error message");
+    }
+
+    try
+    {
+        auto result = parseConfigString!Config("config:\n  value: 42\n  converter: 42", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(2:13): config.converter: You shall not pass");
+    }
 }

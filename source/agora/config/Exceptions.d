@@ -102,13 +102,18 @@ public abstract class ConfigException : Exception
 
     /// Ditto
     public override void toString (scope void delegate(in char[]) sink) const scope
+        @trusted
     {
-        this.toString(sink, FormatSpec!char("%s"));
+        // This breaks the type system, as it blindly trusts a delegate
+        // However, the type system lacks a way to sanely build an utility
+        // which accepts a delegate with different qualifiers, so this is the
+        // less evil approach.
+        this.toString(cast(SinkType) sink, FormatSpec!char("%s"));
     }
 
     /// Ditto
-    public void toString (
-        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+    public void toString (scope SinkType sink, in FormatSpec!char spec)
+        const scope @safe
     {
         import core.internal.string : unsignedToTempString;
 
@@ -168,7 +173,8 @@ public abstract class ConfigException : Exception
 
     /// Hook called by `toString` to simplify coloring
     protected abstract void formatMessage (
-        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope;
+        scope SinkType sink, in FormatSpec!char spec)
+        const scope @safe;
 }
 
 /// A configuration exception that is only a single message
@@ -190,7 +196,8 @@ package final class ConfigExceptionImpl : ConfigException
     }
 
     protected override void formatMessage (
-        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+        scope SinkType sink, in FormatSpec!char spec)
+        const scope @safe
     {
         sink(this.msg);
     }
@@ -226,7 +233,8 @@ package final class TypeConfigException : ConfigException
 
     /// Format the message with or without colors
     protected override void formatMessage (
-        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+        scope SinkType sink, in FormatSpec!char spec)
+        const scope @safe
     {
         const useColors = spec.spec == 'S';
 
@@ -260,7 +268,8 @@ package final class DurationTypeConfigException : ConfigException
 
     /// Format the message with or without colors
     protected override void formatMessage (
-        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+        scope SinkType sink, in FormatSpec!char spec)
+        const scope @safe
     {
         const useColors = spec.spec == 'S';
 
@@ -290,7 +299,8 @@ public class UnknownKeyConfigException : ConfigException
 
     /// Format the message with or without colors
     protected override void formatMessage (
-        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+        scope SinkType sink, in FormatSpec!char spec)
+        const scope @safe
     {
         const useColors = spec.spec == 'S';
         const fmt = "Key is not a valid member of this section. There are %s valid keys: %-(%s, %)";
@@ -316,7 +326,8 @@ public class MissingKeyException : ConfigException
 
     /// Format the message with or without colors
     protected override void formatMessage (
-        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+        scope SinkType sink, in FormatSpec!char spec)
+        const scope @safe
     {
         sink("Required key was not found in configuration of command line arguments");
     }
@@ -336,8 +347,11 @@ public class ConstructionException : ConfigException
 
     /// Format the message with or without colors
     protected override void formatMessage (
-        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+        scope SinkType sink, in FormatSpec!char spec)
+        const scope @trusted
     {
+        // Here we break the type system too, calling a `@system` function,
+        // but since it takes no parameter, why would it not be `@safe` ?
         sink(this.next.message());
     }
 }

@@ -19,6 +19,9 @@ module agora.config.Utils;
 
 import std.format;
 
+/// Type of sink used by the `toString`
+package alias SinkType = void delegate (in char[]) @safe;
+
 /*******************************************************************************
 
     Debugging utility for config filler
@@ -80,7 +83,7 @@ package struct Colored (T)
     private T value;
 
     /// Hook for `formattedWrite`
-    public void toString (scope void delegate (in char[]) sink)
+    public void toString (scope SinkType sink)
     {
         static if (is(typeof(T.init.length) : size_t))
             if (this.value.length == 0) return;

@@ -158,16 +158,19 @@ public abstract class ConfigException : Exception
             if (!this.info)
                 return;
 
-            try
+            () @trusted nothrow
             {
-                sink("\n----------------");
-                foreach (t; info)
+                try
                 {
-                    sink("\n"); sink(t);
+                    sink("\n----------------");
+                    foreach (t; info)
+                    {
+                        sink("\n"); sink(t);
+                    }
                 }
-            }
-            // ignore more errors
-            catch (Throwable) {}
+                // ignore more errors
+                catch (Throwable) {}
+            }();
         }
     }
 

@@ -321,3 +321,23 @@ public class MissingKeyException : ConfigException
         sink("Required key was not found in configuration of command line arguments");
     }
 }
+
+/// Wrap an user-thrown Exception that happened in a Converter/ctor/fromString
+public class ConstructionException : ConfigException
+{
+    /// Constructor
+    public this (Exception next, string path, Mark position,
+                 string file = __FILE__, size_t line = __LINE__)
+        @safe pure nothrow @nogc
+    {
+        super(path, position, file, line);
+        this.next = next;
+    }
+
+    /// Format the message with or without colors
+    protected override void formatMessage (
+        scope void delegate(in char[]) sink, in FormatSpec!char spec) const scope
+    {
+        sink(this.next.message());
+    }
+}

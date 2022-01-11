@@ -740,9 +740,6 @@ private auto parseDefaultMapping (alias SFR) (
     }
 }
 
-/// Convenience short-hand template to get a field identifier
-private enum FId (alias Field) = __traits(identifier, Field);
-
 /// Evaluates to `true` if this field is to be considered optional
 /// (does not need to be present in the YAML document)
 private enum isOptional (alias FR) = hasUDA!(FR.Ref, Optional) ||
@@ -765,10 +762,10 @@ private auto viaConverter (alias FR) (Node node)
     enum Converters = getUDAs!(FR.Ref, Converter);
     static assert (Converters.length,
                    "Internal error: `viaConverter` called on field `" ~
-                   FId!(FR.Ref) ~ "` with no converter");
+                   FR.FieldName ~ "` with no converter");
 
     static assert(Converters.length == 1,
-                  "Field `" ~ FId!(FR.Ref) ~ "` cannot have more than one `Converter`");
+                  "Field `" ~ FR.FieldName ~ "` cannot have more than one `Converter`");
     return Converters[0].converter(node);
 }
 

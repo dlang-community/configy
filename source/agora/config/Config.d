@@ -331,6 +331,15 @@ private T parseMapping (T)
              T.stringof.paint(Cyan), path.paint(Cyan),
              node.length.paintIf(!!node.length, Green, Red));
 
+    static foreach (FR; FieldRefTuple!T)
+    {
+        static if (FR.Name != FR.FieldName && hasMember!(T, FR.Name))
+            static assert (FieldRef!(T, FR.Name).Name != FR.Name,
+                           "Field `" ~ FR.FieldName ~ "` `@Name` attribute shadows field `" ~
+                           FR.Name ~ "` in `" ~ T.stringof ~ "`: Add a `@Name` attribute to `" ~
+                           FR.Name ~ "` or change that of `" ~ FR.FieldName ~ "`");
+    }
+
     if (ctx.strict)
     {
         /// First, check that all the sections found in the mapping are present in the type
@@ -1306,4 +1315,29 @@ unittest
     {
         assert(exc.toString() == "<unknown>(2:13): config.converter: You shall not pass");
     }
+}
+
+// Test duplicate fields detection
+unittest
+{
+    static struct Config
+    {
+        @Name("shadow") int value;
+        @Name("value")  int shadow;
+    }
+
+    auto result = parseConfigString!Config("shadow: 42\nvalue: 84\n", "/dev/null");
+    assert(result.value  == 42);
+    assert(result.shadow == 84);
+
+    static struct BadConfig
+    {
+        int value;
+        @Name("value") int something;
+    }
+
+    // Cannot test the error message, so this is as good as it gets
+    static assert(!is(typeof(() {
+                    auto r = parseConfigString!BadConfig("shadow: 42\nvalue: 84\n", "/dev/null");
+                })));
 }

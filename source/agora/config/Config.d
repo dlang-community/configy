@@ -319,6 +319,9 @@ private struct Context
 /// Helper template for `staticMap` used for strict mode
 private enum FieldRefToName (alias FR) = FR.Name;
 
+/// Returns: An alias sequence of field names, taking UDAs (`@Name` et al) into account
+private alias FieldsName (T) = staticMap!(FieldRefToName, FieldRefTuple!T);
+
 /// Parse a single mapping, recurse as needed
 private T parseMapping (T)
     (Node node, string path, auto ref T defaultValue, in Context ctx, in Node[string] fieldDefaults)
@@ -343,7 +346,7 @@ private T parseMapping (T)
     {
         /// First, check that all the sections found in the mapping are present in the type
         /// If not, the user might have made a typo.
-        immutable string[] fieldNames = [ staticMap!(FieldRefToName, FieldRefTuple!T) ];
+        immutable string[] fieldNames = [ FieldsName!T ];
         foreach (const ref Node key, const ref Node value; node)
             if (!fieldNames.canFind(key.as!string))
                 throw new UnknownKeyConfigException(
@@ -375,9 +378,9 @@ private T parseMapping (T)
                 dbgWrite("%s: %s field of disabled struct, default: %s",
                          path.paint(Cyan), "Ignoring".paint(Yellow), default_);
 
-            static if (FName == "enabled")
+            static if (FR.Name == "enabled")
                 return false;
-            else static if (FName == "disabled")
+            else static if (FR.Name == "disabled")
                 return true;
             else
                 return default_;
@@ -835,24 +838,41 @@ private template FieldRefTuple (T)
     private alias Pred (string name) = FieldRef!(T, name);
 }
 
+/// Helper predicate
+private template NameIs (string searching)
+{
+    enum bool Pred (alias FR) = (searching == FR.Name);
+}
+
 /// Returns whether or not the field has a `enabled` / `disabled` field,
 /// and its value. If it does not, returns `true`.
 private EnabledState isMappingEnabled (M) (Node node, auto ref M default_)
 {
-    static if ([FieldNameTuple!M].canFind("enabled"))
+    import std.meta : Filter;
+
+    alias EMT = Filter!(NameIs!("enabled").Pred, FieldRefTuple!M);
+    alias DMT = Filter!(NameIs!("disabled").Pred, FieldRefTuple!M);
+
+    static if (EMT.length)
     {
+        static assert (DMT.length == 0,
+                       "`enabled` field `" ~ EMT[0].FieldName ~
+                       "` conflicts with `disabled` field `" ~ DMT[0].FieldName ~ "`");
+
         if (auto ptr = "enabled" in node)
             return EnabledState(EnabledState.Field.Enabled, (*ptr).as!bool);
-        return EnabledState(EnabledState.Field.Enabled, __traits(getMember, default_, "enabled"));
+        return EnabledState(EnabledState.Field.Enabled, __traits(getMember, default_, EMT[0].FieldName));
     }
-    else static if ([FieldNameTuple!M].canFind("disabled"))
+    else static if (DMT.length)
     {
         if (auto ptr = "disabled" in node)
             return EnabledState(EnabledState.Field.Disabled, (*ptr).as!bool);
-        return EnabledState(EnabledState.Field.Disabled, __traits(getMember, default_, "disabled"));
+        return EnabledState(EnabledState.Field.Disabled, __traits(getMember, default_, DMT[0].FieldName));
     }
     else
+    {
         return EnabledState(EnabledState.Field.None);
+    }
 }
 
 /// Retun value of `isMappingEnabled`
@@ -1339,4 +1359,32 @@ unittest
     static assert(!is(typeof(() {
                     auto r = parseConfigString!BadConfig("shadow: 42\nvalue: 84\n", "/dev/null");
                 })));
+}
+
+// Test a renamed `enabled` / `disabled`
+unittest
+{
+    static struct ConfigA
+    {
+        @Name("enabled") bool shouldIStay;
+        int value;
+    }
+
+    static struct ConfigB
+    {
+        @Name("disabled") bool orShouldIGo;
+        int value;
+    }
+
+    {
+        auto c = parseConfigString!ConfigA("enabled: true\nvalue: 42", "/dev/null");
+        assert(c.shouldIStay == true);
+        assert(c.value == 42);
+    }
+
+    {
+        auto c = parseConfigString!ConfigB("disabled: false\nvalue: 42", "/dev/null");
+        assert(c.orShouldIGo == false);
+        assert(c.value == 42);
+    }
 }

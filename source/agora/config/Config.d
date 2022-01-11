@@ -317,10 +317,7 @@ private struct Context
 }
 
 /// Helper template for `staticMap` used for strict mode
-private template FieldToName (A)
-{
-    alias Pred (string FieldName) = FieldRef!(A, FieldName).Name;
-}
+private enum FieldRefToName (alias FR) = FR.Name;
 
 /// Parse a single mapping, recurse as needed
 private T parseMapping (T)
@@ -337,7 +334,7 @@ private T parseMapping (T)
     {
         /// First, check that all the sections found in the mapping are present in the type
         /// If not, the user might have made a typo.
-        immutable string[] fieldNames = [ staticMap!(FieldToName!(T).Pred, FieldNameTuple!T) ];
+        immutable string[] fieldNames = [ staticMap!(FieldRefToName, FieldRefTuple!T) ];
         foreach (const ref Node key, const ref Node value; node)
             if (!fieldNames.canFind(key.as!string))
                 throw new UnknownKeyConfigException(
@@ -817,6 +814,18 @@ private template FieldRef (alias T, string name)
     public enum Default = __traits(getMember, T.init, name);
 }
 
+/// Get a tuple of `FieldRef` from a `struct`
+private template FieldRefTuple (T)
+{
+    static assert(is(T == struct),
+                  "Argument " ~ T.stringof ~ " to `FieldRefTuple` should be a `struct`");
+
+    ///
+    public alias FieldRefTuple = staticMap!(Pred, FieldNameTuple!T);
+
+    private alias Pred (string name) = FieldRef!(T, name);
+}
+
 /// Returns whether or not the field has a `enabled` / `disabled` field,
 /// and its value. If it does not, returns `true`.
 private EnabledState isMappingEnabled (M) (Node node, auto ref M default_)
@@ -871,6 +880,7 @@ unittest
     static struct Config1
     {
         int integer2 = 42;
+        @Name("notStr2")
         @(42) string str2;
     }
 
@@ -896,6 +906,9 @@ unittest
     alias NFR3 = FieldRef!(NFR2.Ref, "integer2");
     alias NFR4 = FieldRef!(NFR2.Ref, "str2");
     static assert(hasUDA!(NFR4.Ref, int));
+
+    static assert(FieldRefTuple!(Config3)[1].Name == "integer");
+    static assert(FieldRefTuple!(FieldRefTuple!(Config3)[0].Type)[1].Name == "notStr2");
 }
 
 /// Evaluates to `true` if `T` is a `struct` with a default ctor

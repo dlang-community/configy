@@ -131,6 +131,7 @@
 module agora.config.Config;
 
 public import agora.config.Attributes;
+public import agora.config.Exceptions : ConfigException;
 import agora.config.Exceptions;
 import agora.config.Utils;
 

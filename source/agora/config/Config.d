@@ -562,7 +562,22 @@ private FR.Type parseField (alias FR)
             if (node.nodeID != NodeID.sequence)
                 throw new TypeConfigException(node, "sequence (array)", path);
 
-            return node.parseSequence!(FR.Type, E)(path, ctx);
+            // Only those two fields are used by `parseField`
+            static struct ArrayFieldRef
+            {
+                ///
+                private enum Ref = E.init;
+                ///
+                private alias Type = E;
+            }
+
+            // We pass `E.init` as default value as it is not going to be used:
+            // Either there is something in the YAML document, and that will be
+            // converted, or `sequence` will not iterate.
+            return node.sequence.enumerate.map!(
+                kv => kv.value.parseField!(ArrayFieldRef)(
+                    format("%s[%s]", path, kv.index), E.init, ctx))
+                .array();
         }
     }
     else
@@ -689,18 +704,6 @@ private struct DurationPseudoMapping
             core.time.usecs(this.usecs) + core.time.hnsecs(this.hnsecs) +
             core.time.nsecs(this.nsecs);
     }
-}
-
-private T parseSequence (T : E[], E) (Node node, string path, in Context ctx)
-{
-    assert(node.nodeID == NodeID.sequence, "Internal error: parseSequence shouldn't have been called");
-    // TODO: Fix path
-    static if (is(E == struct))
-        return node.sequence.map!(n => n.parseMapping!E(path, E.init, ctx, null)).array();
-    else static if (isSomeString!E) // Avoid Variant bug
-        return node.sequence.map!(n => cast(E) n.parseScalar!string(path)).array();
-    else
-        return node.sequence.map!(n => n.parseScalar!E(path)).array();
 }
 
 private auto parseDefaultMapping (alias SFR) (
@@ -1334,6 +1337,40 @@ unittest
     catch (ConfigException exc)
     {
         assert(exc.toString() == "<unknown>(2:13): config.converter: You shall not pass");
+    }
+
+    // We also need to test with arrays, to ensure they are correctly called
+    static struct InnerArrayConfig
+    {
+        @Optional int value;
+        @Optional ThrowingCtor ctor;
+        @Optional ThrowingFromString fromString;
+    }
+
+    static struct ArrayConfig
+    {
+        public InnerArrayConfig[] configs;
+    }
+
+    try
+    {
+        auto result = parseConfigString!ArrayConfig("configs:\n  - ctor: something", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(1:10): configs[0].ctor: Something went wrong... Obviously");
+    }
+
+    try
+    {
+        auto result = parseConfigString!ArrayConfig(
+            "configs:\n  - value: 42\n  - fromString: something", "/dev/null");
+        assert(0);
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "<unknown>(2:16): configs[1].fromString: Some meaningful error message");
     }
 }
 

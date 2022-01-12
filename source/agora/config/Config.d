@@ -430,12 +430,12 @@ private T parseMapping (T)
         // of its field is required.
         else static if (mightBeOptional!FR)
         {
-            const npath = path.addPath(FName);
+            const npath = path.addPath(FR.Name);
             string[string] aa;
             return Node(aa).parseMapping!(FR.Type)(npath, FR.Default, ctx, null);
         }
         else
-            throw new MissingKeyException(path, FName, node.startMark());
+            throw new MissingKeyException(path, FR.Name, node.startMark());
     }
 
     debug (ConfigFillerDebug)
@@ -1387,5 +1387,25 @@ unittest
         auto c = parseConfigString!ConfigB("disabled: false\nvalue: 42", "/dev/null");
         assert(c.orShouldIGo == false);
         assert(c.value == 42);
+    }
+}
+
+// Test for 'mightBeOptional' & missing key
+unittest
+{
+    static struct RequestLimit { size_t reqs = 100; }
+    static struct Nested       { @Name("jay") int value; }
+    static struct Config { @Name("chris") Nested value; RequestLimit limits; }
+
+    auto r = parseConfigString!Config("chris:\n  jay: 42", "/dev/null");
+    assert(r.limits.reqs == 100);
+
+    try
+    {
+        auto _ = parseConfigString!Config("limits:\n  reqs: 42", "/dev/null");
+    }
+    catch (ConfigException exc)
+    {
+        assert(exc.toString() == "(0:0): chris.jay: Required key was not found in configuration of command line arguments");
     }
 }

@@ -14,7 +14,7 @@
         },
         {
             "name": "debug",
-            "debug": [ "ConfigFillerDebug" ]
+            "debugVersions": [ "ConfigFillerDebug" ]
         },
         {
             "name": "unittest",

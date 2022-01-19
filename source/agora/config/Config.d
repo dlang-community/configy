@@ -260,6 +260,8 @@ public struct CLIArgs
     Params:
         path = Path of the file to read from
         args = Command line arguments on which `parse` has been called
+        strict = Whether the parsing should reject unknown keys in the
+                 document (default: `true`)
 
     Returns:
         An initialized `Config` instance if reading/parsing was successful;
@@ -267,13 +269,14 @@ public struct CLIArgs
 
 *******************************************************************************/
 
-public Nullable!T parseConfigFileSimple (T) (string path)
+public Nullable!T parseConfigFileSimple (T) (string path, bool strict = true)
 {
-    return parseConfigFileSimple!(T)(CLIArgs(path));
+    return parseConfigFileSimple!(T)(CLIArgs(path), strict);
 }
 
+
 /// Ditto
-public Nullable!T parseConfigFileSimple (T) (in CLIArgs args)
+public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, bool strict = true)
 {
     import std.stdio;
 
@@ -288,7 +291,7 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args)
     try
     {
         Node root = Loader.fromFile(args.config_path).load();
-        return nullable(parseConfig!T(args, root));
+        return nullable(parseConfig!T(args, root, strict));
     }
     catch (ConfigException exc)
     {
@@ -314,6 +317,8 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args)
 
     Params:
         cmdln = command-line arguments (containing the path to the config)
+        strict = Whether the parsing should reject unknown keys in the
+                 document (default: `true`)
 
     Throws:
         `Exception` if parsing the config file failed.
@@ -323,18 +328,18 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args)
 
 *******************************************************************************/
 
-public T parseConfigFile (T) (in CLIArgs cmdln)
+public T parseConfigFile (T) (in CLIArgs cmdln, bool strict = true)
 {
     Node root = Loader.fromFile(cmdln.config_path).load();
-    return parseConfig!T(cmdln, root);
+    return parseConfig!T(cmdln, root, strict);
 }
 
 /// ditto
-public T parseConfigString (T) (string data, string path)
+public T parseConfigString (T) (string data, string path, bool strict = true)
 {
     CLIArgs cmdln = { config_path: path };
     Node root = Loader.fromString(data).load();
-    return parseConfig!T(cmdln, root);
+    return parseConfig!T(cmdln, root, strict);
 }
 
 /*******************************************************************************

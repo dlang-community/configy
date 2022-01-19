@@ -332,7 +332,7 @@ public class MissingKeyException : ConfigException
         scope SinkType sink, in FormatSpec!char spec)
         const scope @safe
     {
-        sink("Required key was not found in configuration of command line arguments");
+        sink("Required key was not found in configuration or command line arguments");
     }
 }
 

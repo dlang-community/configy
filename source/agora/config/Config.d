@@ -1205,7 +1205,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(1:2): inner.required: Required key was not found in configuration of command line arguments");
+        assert(exc.toString() == "<unknown>(1:2): inner.required: Required key was not found in configuration or command line arguments");
     }
 }
 
@@ -1443,6 +1443,6 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "(0:0): chris.jay: Required key was not found in configuration of command line arguments");
+        assert(exc.toString() == "(0:0): chris.jay: Required key was not found in configuration or command line arguments");
     }
 }

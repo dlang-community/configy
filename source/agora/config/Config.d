@@ -146,6 +146,7 @@ import std.format;
 import std.getopt;
 import std.range;
 import std.traits;
+import std.typecons : Nullable, nullable;
 
 static import core.time;
 
@@ -233,6 +234,79 @@ public struct CLIArgs
         );
     }
 }
+
+/*******************************************************************************
+
+    Attempt to read and process the config file at `path`, print any error
+
+    This 'simple' overload of the more detailed `parseConfigFile` will attempt
+    to read the file at `path`, and return a `Nullable` instance of it.
+    If an error happens, either because the file isn't readable or
+    the configuration has an issue, a message will be printed to `stderr`,
+    with colors if the output is a TTY, and a `null` instance will be returned.
+
+    The calling code can hence just read a config file via:
+    ```
+    int main ()
+    {
+        auto configN = parseConfigFileSimple!Config("config.yaml");
+        if (configN.isNull()) return 1; // Error path
+        auto config = configN.get();
+        // Rest of the program ...
+    }
+    ```
+    An overload accepting `CLIArgs args` also exists.
+
+    Params:
+        path = Path of the file to read from
+        args = Command line arguments on which `parse` has been called
+
+    Returns:
+        An initialized `Config` instance if reading/parsing was successful;
+        a `null` instance otherwise.
+
+*******************************************************************************/
+
+public Nullable!T parseConfigFileSimple (T) (string path)
+{
+    return parseConfigFileSimple!(T)(CLIArgs(path));
+}
+
+/// Ditto
+public Nullable!T parseConfigFileSimple (T) (in CLIArgs args)
+{
+    import std.stdio;
+
+    version (Posix)
+    {
+        import core.sys.posix.unistd : isatty;
+        const colors = isatty(stderr.fileno);
+    }
+    else
+        const colors = false;
+
+    try
+    {
+        Node root = Loader.fromFile(args.config_path).load();
+        return nullable(parseConfig!T(args, root));
+    }
+    catch (ConfigException exc)
+    {
+        if (colors)
+            stderr.writefln("%S", exc);
+        else
+            stderr.writefln("%s", exc.message());
+        return typeof(return).init;
+    }
+    catch (Exception exc)
+    {
+        // Other Exception type may be thrown by D-YAML,
+        // they won't include rich information.
+        stderr.writeln(exc.message());
+        return typeof(return).init;
+    }
+}
+
 
 /*******************************************************************************
 

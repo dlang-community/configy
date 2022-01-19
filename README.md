@@ -78,8 +78,8 @@ This demonstrate a few important properties of the config parser:
 
 ## Full documentation
 
-The full, up-to-date documentation can be found [here](https://bosagora.github.io/config/).
-It is the authoritative source for examples, behavior, and best practices.
+The full, up-to-date API documentation can be found [here](https://bosagora.github.io/config/).
+A list of example for common use cases can be found [here](doc/FAQ.md).
 
 ## Rich error reporting
 

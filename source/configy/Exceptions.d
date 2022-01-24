@@ -3,7 +3,7 @@
     Definitions for Exceptions used by the config module.
 
     Copyright:
-        Copyright (c) 2019-2021 BOSAGORA Foundation
+        Copyright (c) 2019-2022 BOSAGORA Foundation
         All rights reserved.
 
     License:
@@ -11,9 +11,9 @@
 
 *******************************************************************************/
 
-module agora.config.Exceptions;
+module configy.Exceptions;
 
-import agora.config.Utils;
+import configy.Utils;
 
 import dyaml.exception;
 import dyaml.node;

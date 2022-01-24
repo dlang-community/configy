@@ -1,5 +1,5 @@
 {
-    "name": "config",
+    "name": "configy",
     "description": "An automatic YAML to struct configuration parser for dlang",
 
     "authors": [ "Mathias 'Geod24' Lang" ],

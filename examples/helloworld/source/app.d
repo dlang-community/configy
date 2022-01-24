@@ -1,6 +1,6 @@
 module helloworld;
 
-import agora.config.Config;
+import configy.Read;
 
 import std.getopt;
 import std.stdio;

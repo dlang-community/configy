@@ -6,7 +6,7 @@
     without importing the whole configuration parsing code.
 
     Copyright:
-        Copyright (c) 2019-2021 BOSAGORA Foundation
+        Copyright (c) 2019-2022 BOSAGORA Foundation
         All rights reserved.
 
     License:
@@ -14,7 +14,7 @@
 
 *******************************************************************************/
 
-module agora.config.Attributes;
+module configy.Attributes;
 
 import core.time;
 import std.conv : to;

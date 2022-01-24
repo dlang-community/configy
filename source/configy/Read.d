@@ -120,7 +120,7 @@
       be processed if it is set to `true`.
 
     Copyright:
-        Copyright (c) 2019-2021 BOSAGORA Foundation
+        Copyright (c) 2019-2022 BOSAGORA Foundation
         All rights reserved.
 
     License:
@@ -128,12 +128,12 @@
 
 *******************************************************************************/
 
-module agora.config.Config;
+module configy.Read;
 
-public import agora.config.Attributes;
-public import agora.config.Exceptions : ConfigException;
-import agora.config.Exceptions;
-import agora.config.Utils;
+public import configy.Attributes;
+public import configy.Exceptions : ConfigException;
+import configy.Exceptions;
+import configy.Utils;
 
 import dyaml.exception;
 import dyaml.node;
@@ -882,7 +882,7 @@ private template FieldRef (alias T, string name)
 {
     // Import needed as `Name` is defined in this template but we also need
     // to use that identifier in `getUDAs`.
-    import agora.config.Attributes : CAName = Name;
+    import configy.Attributes : CAName = Name;
 
     /// The reference to the field
     public alias Ref = __traits(getMember, T, name);

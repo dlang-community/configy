@@ -21,7 +21,7 @@ Let's start with an hello world:
 ```D
 module helloworld;
 
-import agora.config.Config;
+import configy.Read;
 
 import std.stdio;
 import std.typecons;
@@ -78,7 +78,7 @@ This demonstrate a few important properties of the config parser:
 
 ## Full documentation
 
-The full, up-to-date API documentation can be found [here](https://bosagora.github.io/config/).
+The full, up-to-date API documentation can be found [here](https://bosagora.github.io/configy/).
 A list of example for common use cases can be found [here](doc/FAQ.md).
 
 ## Rich error reporting

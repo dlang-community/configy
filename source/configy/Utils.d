@@ -7,7 +7,7 @@
     `debug` configuration provided by `dub.json`.
 
     Copyright:
-        Copyright (c) 2019-2021 BOSAGORA Foundation
+        Copyright (c) 2019-2022 BOSAGORA Foundation
         All rights reserved.
 
     License:
@@ -15,7 +15,7 @@
 
 *******************************************************************************/
 
-module agora.config.Utils;
+module configy.Utils;
 
 import std.format;
 

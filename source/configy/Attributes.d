@@ -155,8 +155,25 @@ public struct Name
 
 public struct SetInfo (T)
 {
-    /// Allow initialization as a field
-    public this (T initVal, bool isSet = false) @safe pure nothrow @nogc
+    /***************************************************************************
+
+        Allow initialization as a field
+
+        This sets the field as having been set, so that:
+        ```
+        struct Config { SetInfo!Duration timeout; }
+
+        Config myConf = { timeout: 10.minutes }
+        ```
+        Will behave as if set explicitly. If this behavior is not wanted,
+        pass `false` as second argument:
+        ```
+        Config myConf = { timeout: SetInfo!Duration(10.minutes, false) }
+        ```
+
+    ***************************************************************************/
+
+    public this (T initVal, bool isSet = true) @safe pure nothrow @nogc
     {
         this.value = initVal;
         this.set = isSet;

@@ -1123,7 +1123,7 @@ unittest
     {
         SetInfo!int value;
         SetInfo!int answer = 42;
-        SetInfo!string name = "Lorene";
+        SetInfo!string name = SetInfo!string("Lorene", false);
 
         SetInfo!Address address;
     }
@@ -1132,7 +1132,7 @@ unittest
     assert(c1.value == 24);
     assert(c1.value.set);
 
-    assert(!c1.answer.set);
+    assert(c1.answer.set);
     assert(c1.answer == 42);
 
     assert(!c1.name.set);

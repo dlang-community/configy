@@ -25,9 +25,10 @@
       Because config structs may contain complex types such as
       a Phobos type, a user-defined `Amount`, or Vibe.d's `URL`,
       one may need to apply a converter to a struct's field.
-      Converters are simply functions that take a `string` as argument
+      Converters are functions that take a YAML `Node` as argument
       and return a type that is implicitly convertible to the field type
-      (usually just the field type).
+      (usually just the field type). They offer the most power to users,
+      as they can inspect the YAML structure, but should be used as a last resort.
 
     Composite_Types:
       Processing starts from a `struct` at the top level, and recurse into

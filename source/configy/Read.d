@@ -146,7 +146,7 @@ import std.format;
 import std.getopt;
 import std.range;
 import std.traits;
-import std.typecons : Nullable, nullable;
+import std.typecons : Nullable, nullable, tuple;
 
 static import core.time;
 
@@ -607,6 +607,30 @@ private FR.Type parseField (alias FR)
     else static if (is(FR.Type == enum))
         return node.parseScalar!(FR.Type)(path);
 
+    else static if (is(FR.Type : E[K], E, K))
+    {
+        if (node.nodeID != NodeID.mapping)
+            throw new TypeConfigException(node, "mapping (associative array)", path);
+
+        static struct AAFieldRef
+        {
+            ///
+            private enum Ref = E.init;
+            ///
+            private alias Type = E;
+        }
+
+        // Note: As of June 2022 (DMD v2.100.0), associative arrays cannot
+        // have initializers, hence their UX for config is less optimal.
+        return node.mapping().map!(
+                (Node.Pair pair) {
+                    return tuple(
+                        pair.key.get!K,
+                        pair.value.parseField!(AAFieldRef)(
+                            format("%s[%s]", path, pair.key.as!string), E.init, ctx));
+                }).assocArray();
+
+    }
     else static if (is(FR.Type : E[], E))
     {
         static if (hasUDA!(FR.Ref, Key))
@@ -1524,4 +1548,41 @@ unittest
     {
         assert(exc.toString() == "(0:0): chris.jay: Required key was not found in configuration or command line arguments");
     }
+}
+
+// Support for associative arrays
+unittest
+{
+    static struct Nested
+    {
+        int[string] answers;
+    }
+
+    static struct Parent
+    {
+        Nested[string] questions;
+        string[int] names;
+    }
+
+    auto c = parseConfigString!Parent(
+`names:
+  42: "Forty two"
+  97: "Quatre vingt dix sept"
+questions:
+  first:
+    answers:
+      # Need to use quotes here otherwise it gets interpreted as
+      # true / false, perhaps a dyaml issue ?
+      'yes': 42
+      'no':  24
+  second:
+    answers:
+      maybe:  69
+      whynot: 20
+`, "/dev/null");
+
+    assert(c.names == [42: "Forty two", 97: "Quatre vingt dix sept"]);
+    assert(c.questions.length == 2);
+    assert(c.questions["first"] == Nested(["yes": 42, "no": 24]));
+    assert(c.questions["second"] == Nested(["maybe": 69, "whynot": 20]));
 }

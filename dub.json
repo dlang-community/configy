@@ -17,8 +17,7 @@
             "debugVersions": [ "ConfigFillerDebug" ]
         },
         {
-            "name": "unittest",
-            "dflags": [ "-checkaction=context" ]
+            "name": "unittest"
         }
     ],
 

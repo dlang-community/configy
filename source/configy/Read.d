@@ -426,7 +426,8 @@ private T parseMapping (T)
 
     static foreach (FR; FieldRefTuple!T)
     {
-        static if (FR.Name != FR.FieldName && hasMember!(T, FR.Name))
+        static if (FR.Name != FR.FieldName && hasMember!(T, FR.Name) &&
+                   !is(typeof(mixin("T.", FR.Name)) == function))
             static assert (FieldRef!(T, FR.Name).Name != FR.Name,
                            "Field `" ~ FR.FieldName ~ "` `@Name` attribute shadows field `" ~
                            FR.Name ~ "` in `" ~ T.stringof ~ "`: Add a `@Name` attribute to `" ~
@@ -1672,4 +1673,22 @@ unittest
     }
     auto c3 = parseConfigString!OptConfig("value: 69\n", "/dev/null");
     assert(c3.value == 69);
+}
+
+unittest
+{
+    static struct Config
+    {
+        @Name("names")
+        string[] names_;
+
+        size_t names () const scope @safe pure nothrow @nogc
+        {
+            return this.names_.length;
+        }
+    }
+
+    auto c = parseConfigString!Config("names:\n  - John\n  - Luca\n", "/dev/null");
+    assert(c.names_ == [ "John", "Luca" ]);
+    assert(c.names == 2);
 }

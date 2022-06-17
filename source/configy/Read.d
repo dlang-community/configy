@@ -496,7 +496,7 @@ private T parseMapping (T)
         // A field is considered optional if it has an initializer that is different
         // from its default value, or if it has the `Optional` UDA.
         // In that case, just return this value.
-        static if (isOptional!FR)
+        static if (FR.Optional)
             return FR.Default
                 .dbgWriteRet("Using default value '%s' for optional field '%s'", FName.paint(Cyan));
 
@@ -769,7 +769,7 @@ private core.time.Duration parseDuration (alias FR)
 
         if (!hasOneSet)
         {
-            static if (isOptional!FR)
+            static if (FR.Optional)
                 return defaultValue;
             else
                 throw new ConfigExceptionImpl("Expected one of the field's values to be set",
@@ -835,7 +835,7 @@ private auto parseDefaultMapping (alias SFR) (
         }
 
         // If it has converters, we should not recurse into it
-        static if (isOptional!FR)
+        static if (FR.Optional)
             return FR.Default;
         else static if (mightBeOptional!FR)
             return parseDefaultMapping!FR(npath, firstMissing, ctx);
@@ -856,13 +856,6 @@ private auto parseDefaultMapping (alias SFR) (
         return SFR.Type.init; // Just so that the compiler doesn't get confused
     }
 }
-
-/// Evaluates to `true` if this field is to be considered optional
-/// (does not need to be present in the YAML document)
-private enum isOptional (alias FR) = hasUDA!(FR.Ref, Optional) ||
-    is(immutable(FR.Type) == immutable(bool)) ||
-    is(FR.Type : SetInfo!FT, FT) ||
-    (FR.Default != FR.Type.init);
 
 /// Evaluates to `true` if we should recurse into the struct via `parseDefaultMapping`
 private enum mightBeOptional (alias FR) = is(FR.Type == struct) &&
@@ -903,11 +896,11 @@ private auto viaConverter (alias FR) (Node node)
 
 *******************************************************************************/
 
-private template FieldRef (alias T, string name)
+private template FieldRef (alias T, string name, bool forceOptional = false)
 {
-    // Import needed as `Name` is defined in this template but we also need
-    // to use that identifier in `getUDAs`.
-    import configy.Attributes : CAName = Name;
+    // Renamed imports as the names exposed by this template clash
+    // with what we import.
+    import configy.Attributes : CAName = Name, CAOptional = Optional;
 
     /// The reference to the field
     public alias Ref = __traits(getMember, T, name);
@@ -932,6 +925,14 @@ private template FieldRef (alias T, string name)
 
     /// Default value of the field (may or may not be `Type.init`)
     public enum Default = __traits(getMember, T.init, name);
+
+    /// Evaluates to `true` if this field is to be considered optional
+    /// (does not need to be present in the YAML document)
+    public enum Optional = forceOptional ||
+        hasUDA!(Ref, CAOptional) ||
+        is(immutable(Type) == immutable(bool)) ||
+        is(Type : SetInfo!FT, FT) ||
+        (Default != Type.init);
 }
 
 /// Get a tuple of `FieldRef` from a `struct`

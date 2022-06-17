@@ -380,7 +380,7 @@ public T parseConfig (T) (
     in CLIArgs cmdln, Node node, bool strict = true, string initPath = null)
 {
     static assert(is(T == struct), "`" ~ __FUNCTION__ ~
-                  " should only be called with a `struct` type as argument, not: `" ~
+                  "` should only be called with a `struct` type as argument, not: `" ~
                   fullyQualifiedName!T ~ "`");
 
     final switch (node.nodeID)

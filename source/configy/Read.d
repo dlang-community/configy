@@ -48,6 +48,15 @@
         one by one and pass them to the default constructor, if there is any.
       - If none of the above succeeded, a `static assert` will trigger.
 
+    Alias_this:
+      If a `struct` contains an `alias this`, the field that is aliased will be
+      ignored, instead the config parser will parse nested fields as if they
+      were part of the enclosing structure. This allow to re-use a single `struct`
+      in multiple place without having to resort to a `mixin template`.
+      Having an initializer will make all fields in the aliased struct optional.
+      The aliased field cannot have attributes other than `@Optional`,
+      which will then apply to all fields it exposes.
+
     Duration_parsing:
       If the config field is of type `core.time.Duration`, special parsing rules
       will apply. There are two possible forms in which a Duration field may
@@ -145,6 +154,7 @@ import std.conv;
 import std.datetime;
 import std.format;
 import std.getopt;
+import std.meta;
 import std.range;
 import std.traits;
 import std.typecons : Nullable, nullable, tuple;
@@ -439,9 +449,8 @@ private T parseMapping (T)
     if (enabledState.field != EnabledState.Field.None)
         dbgWrite("%s: Mapping is enabled: %s", T.stringof.paint(Cyan), (!!enabledState).paintBool());
 
-    auto convert (string FName) ()
+    auto convertField (alias FR) ()
     {
-        alias FR = FieldRef!(T, FName);
         static if (FR.Name != FR.FieldName)
             dbgWrite("Field name `%s` will use YAML field `%s`",
                      FR.FieldName.paint(Yellow), FR.Name.paint(Green));
@@ -467,16 +476,16 @@ private T parseMapping (T)
                 return default_;
         }
 
-        if (auto ptr = FName in fieldDefaults)
+        if (auto ptr = FR.FieldName in fieldDefaults)
         {
             dbgWrite("Found %s (%s.%s) in `fieldDefaults",
-                     FR.Name.paint(Cyan), path.paint(Cyan), FName.paint(Cyan));
+                     FR.Name.paint(Cyan), path.paint(Cyan), FR.FieldName.paint(Cyan));
 
-            if (ctx.strict && FName in node)
-                throw new ConfigExceptionImpl("'Key' field is specified twice", path, FName, node.startMark());
-            return (*ptr).parseField!(FR)(path.addPath(FName), default_, ctx)
+            if (ctx.strict && FR.FieldName in node)
+                throw new ConfigExceptionImpl("'Key' field is specified twice", path, FR.FieldName, node.startMark());
+            return (*ptr).parseField!(FR)(path.addPath(FR.FieldName), default_, ctx)
                 .dbgWriteRet("Using value '%s' from fieldDefaults for field '%s'",
-                             FName.paint(Cyan));
+                             FR.FieldName.paint(Cyan));
         }
 
         if (auto ptr = FR.Name in node)
@@ -498,7 +507,7 @@ private T parseMapping (T)
         // In that case, just return this value.
         static if (FR.Optional)
             return FR.Default
-                .dbgWriteRet("Using default value '%s' for optional field '%s'", FName.paint(Cyan));
+                .dbgWriteRet("Using default value '%s' for optional field '%s'", FR.FieldName.paint(Cyan));
 
         // The field is not present, but it could be because it is an optional section.
         // For example, the section could be defined as:
@@ -516,6 +525,26 @@ private T parseMapping (T)
         }
         else
             throw new MissingKeyException(path, FR.Name, node.startMark());
+    }
+
+    auto convert (string FName, bool forceOptional = false) ()
+    {
+        alias FR = FieldRef!(T, FName, forceOptional);
+        static if (__traits(getAliasThis, T).length == 1 &&
+                   __traits(getAliasThis, T)[0] == FName)
+        {
+            static assert(FR.Name == FR.FieldName,
+                          "Field `" ~ fullyQualifiedName!(FR.Ref) ~
+                          "` is the target of an `alias this` and cannot have a `@Name` attribute");
+            static assert(!hasConverter!(FR.Ref),
+                          "Field `" ~ fullyQualifiedName!(FR.Ref) ~
+                          "` is the target of an `alias this` and cannot have a `@Converter` attribute");
+
+            alias convertMaybe(string FName) = convert!(FName, FR.Optional);
+            return FR.Type(staticMap!(convertMaybe, FieldNameTuple!(FR.Type)));
+        }
+        else
+            return convertField!(FR)();
     }
 
     debug (ConfigFillerDebug)
@@ -942,7 +971,23 @@ private template FieldRefTuple (T)
                   "Argument " ~ T.stringof ~ " to `FieldRefTuple` should be a `struct`");
 
     ///
-    public alias FieldRefTuple = staticMap!(Pred, FieldNameTuple!T);
+    static if (__traits(getAliasThis, T).length == 0)
+        public alias FieldRefTuple = staticMap!(Pred, FieldNameTuple!T);
+    else
+    {
+        /// Tuple of strings of aliased fields
+        /// As of DMD v2.100.0, only a single alias this is supported in D.
+        private immutable AliasedFieldNames = __traits(getAliasThis, T);
+        static assert(AliasedFieldNames.length == 1, "Multiple `alias this` are not supported");
+
+        /// "Base" field names minus aliased ones
+        private immutable BaseFields = Erase!(AliasedFieldNames, FieldNameTuple!T);
+        static assert(BaseFields.length == FieldNameTuple!(T).length - 1);
+
+        public alias FieldRefTuple = AliasSeq!(
+            staticMap!(Pred, BaseFields),
+            FieldRefTuple!(typeof(__traits(getMember, T, AliasedFieldNames))));
+    }
 
     private alias Pred (string name) = FieldRef!(T, name);
 }
@@ -1587,4 +1632,44 @@ questions:
     assert(c.questions.length == 2);
     assert(c.questions["first"] == Nested(["yes": 42, "no": 24]));
     assert(c.questions["second"] == Nested(["maybe": 69, "whynot": 20]));
+}
+
+unittest
+{
+    static struct FlattenMe
+    {
+        int value;
+        string name;
+    }
+
+    static struct Config
+    {
+        FlattenMe flat = FlattenMe(24, "Four twenty");
+        alias flat this;
+
+        FlattenMe not_flat;
+    }
+
+    auto c = parseConfigString!Config(
+        "value: 42\nname: John\nnot_flat:\n  value: 69\n  name: Henry",
+        "/dev/null");
+    assert(c.flat.value == 42);
+    assert(c.flat.name == "John");
+    assert(c.not_flat.value == 69);
+    assert(c.not_flat.name == "Henry");
+
+    auto c2 = parseConfigString!Config(
+        "not_flat:\n  value: 69\n  name: Henry", "/dev/null");
+    assert(c2.flat.value == 24);
+    assert(c2.flat.name == "Four twenty");
+
+    static struct OptConfig
+    {
+        @Optional FlattenMe flat;
+        alias flat this;
+
+        int value;
+    }
+    auto c3 = parseConfigString!OptConfig("value: 69\n", "/dev/null");
+    assert(c3.value == 69);
 }

@@ -16,8 +16,6 @@
 
 module configy.Attributes;
 
-import core.time;
-import std.conv : to;
 import std.traits;
 
 /*******************************************************************************

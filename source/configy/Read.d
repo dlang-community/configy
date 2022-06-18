@@ -719,7 +719,11 @@ private FR.Type parseField (alias FR)
         }
     }
     else
+    {
+        static assert (!is(FR.Type == union),
+                       "`union` are not supported. Use a converter instead");
         return node.parseScalar!(FR.Type)(path);
+    }
 }
 
 /// Parse a node as a scalar
@@ -1695,4 +1699,22 @@ unittest
     auto c = parseConfigString!Config("names:\n  - John\n  - Luca\n", "/dev/null");
     assert(c.names_ == [ "John", "Luca" ]);
     assert(c.names == 2);
+}
+
+// Make sure unions don't compile
+unittest
+{
+    static union MyUnion
+    {
+        string value;
+        int number;
+    }
+
+    static struct Config
+    {
+        MyUnion hello;
+    }
+
+    static assert(!is(typeof(parseConfigString!Config("hello: world\n", "/dev/null"))));
+    static assert(!is(typeof(parseConfigString!MyUnion("hello: world\n", "/dev/null"))));
 }

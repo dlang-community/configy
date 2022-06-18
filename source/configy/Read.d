@@ -587,6 +587,10 @@ private T parseMapping (T)
     Parse a field, trying to match up the compile-time expectation with
     the run time value of the Node (`nodeID`).
 
+    This is the central point which does "type conversion", from the YAML node
+    to the field type. Whenever adding support for a new type, things should
+    happen here.
+
     Because a `struct` can be filled from either a mapping or a scalar,
     this function will first try the converter / fromString / string ctor
     methods before defaulting to fieldwise construction.

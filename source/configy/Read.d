@@ -328,6 +328,7 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, bool strict = true
 
     Params:
         cmdln = command-line arguments (containing the path to the config)
+        path = When parsing a string, the path corresponding to it
         strict = Whether the parsing should reject unknown keys in the
                  document (default: `true`)
 

@@ -361,7 +361,9 @@ public T parseConfigFile (T) (in CLIArgs cmdln, StrictMode strict = StrictMode.E
 public T parseConfigString (T) (string data, string path, StrictMode strict = StrictMode.Error)
 {
     CLIArgs cmdln = { config_path: path };
-    Node root = Loader.fromString(data).load();
+    auto loader = Loader.fromString(data);
+    loader.name = path;
+    Node root = loader.load();
     return parseConfig!T(cmdln, root, strict);
 }
 
@@ -1294,7 +1296,7 @@ unittest
     }
     catch (Exception exc)
     {
-        assert(exc.toString() == "<unknown>(1:10): node.timeout: Field is of type scalar, " ~
+        assert(exc.toString() == "/dev/null(1:10): node.timeout: Field is of type scalar, " ~
                "but expected a mapping with at least one of: weeks, days, hours, minutes, " ~
                "seconds, msecs, usecs, hnsecs, nsecs");
     }
@@ -1308,9 +1310,9 @@ unittest
     catch (ConfigException e)
     {
         assert(format("%s", e) ==
-               "<unknown>(0:0): value: Key is not a valid member of this section. There are 1 valid keys: required");
+               "/dev/null(0:0): value: Key is not a valid member of this section. There are 1 valid keys: required");
         assert(format("%S", e) ==
-               format("%s<unknown>%s(%s0%s:%s0%s): %svalue%s: Key is not a valid member of this section. " ~
+               format("%s/dev/null%s(%s0%s:%s0%s): %svalue%s: Key is not a valid member of this section. " ~
                       "There are %s1%s valid keys: %srequired%s", Yellow, Reset, Cyan, Reset, Cyan, Reset,
                       Yellow, Reset, Yellow, Reset, Green, Reset));
     }
@@ -1338,7 +1340,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(0:5): map: Expected to be of type mapping (object), but is a scalar");
+        assert(exc.toString() == "/dev/null(0:5): map: Expected to be of type mapping (object), but is a scalar");
     }
 
     try
@@ -1348,7 +1350,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(1:2): map: Expected to be of type mapping (object), but is a sequence");
+        assert(exc.toString() == "/dev/null(1:2): map: Expected to be of type mapping (object), but is a sequence");
     }
 
     try
@@ -1358,7 +1360,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(1:2): scalar: Expected to be of type scalar (value), but is a sequence");
+        assert(exc.toString() == "/dev/null(1:2): scalar: Expected to be of type scalar (value), but is a sequence");
     }
 
     try
@@ -1368,7 +1370,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(1:2): scalar: Expected to be of type scalar (value), but is a mapping");
+        assert(exc.toString() == "/dev/null(1:2): scalar: Expected to be of type scalar (value), but is a mapping");
     }
 }
 
@@ -1387,7 +1389,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(0:0): valeu: Key is not a valid member of this section. There are 1 valid keys: value");
+        assert(exc.toString() == "/dev/null(0:0): valeu: Key is not a valid member of this section. There are 1 valid keys: value");
     }
 }
 
@@ -1412,7 +1414,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(1:2): inner.required: Required key was not found in configuration or command line arguments");
+        assert(exc.toString() == "/dev/null(1:2): inner.required: Required key was not found in configuration or command line arguments");
     }
 }
 
@@ -1523,7 +1525,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(2:8): config.ctor: Something went wrong... Obviously");
+        assert(exc.toString() == "/dev/null(2:8): config.ctor: Something went wrong... Obviously");
     }
 
     try
@@ -1533,7 +1535,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(2:14): config.fromString: Some meaningful error message");
+        assert(exc.toString() == "/dev/null(2:14): config.fromString: Some meaningful error message");
     }
 
     try
@@ -1543,7 +1545,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(2:13): config.converter: You shall not pass");
+        assert(exc.toString() == "/dev/null(2:13): config.converter: You shall not pass");
     }
 
     // We also need to test with arrays, to ensure they are correctly called
@@ -1566,7 +1568,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(1:10): configs[0].ctor: Something went wrong... Obviously");
+        assert(exc.toString() == "/dev/null(1:10): configs[0].ctor: Something went wrong... Obviously");
     }
 
     try
@@ -1577,7 +1579,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(2:16): configs[1].fromString: Some meaningful error message");
+        assert(exc.toString() == "/dev/null(2:16): configs[1].fromString: Some meaningful error message");
     }
 }
 

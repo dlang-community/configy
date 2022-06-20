@@ -1031,13 +1031,19 @@ private template FieldRefTuple (T)
         private immutable AliasedFieldNames = __traits(getAliasThis, T);
         static assert(AliasedFieldNames.length == 1, "Multiple `alias this` are not supported");
 
-        /// "Base" field names minus aliased ones
-        private immutable BaseFields = Erase!(AliasedFieldNames, FieldNameTuple!T);
-        static assert(BaseFields.length == FieldNameTuple!(T).length - 1);
+        // Ignore alias to functions (if it's a property we can't do anything)
+        static if (isSomeFunction!(__traits(getMember, T, AliasedFieldNames)))
+            public alias FieldRefTuple = staticMap!(Pred, FieldNameTuple!T);
+        else
+        {
+            /// "Base" field names minus aliased ones
+            private immutable BaseFields = Erase!(AliasedFieldNames, FieldNameTuple!T);
+            static assert(BaseFields.length == FieldNameTuple!(T).length - 1);
 
-        public alias FieldRefTuple = AliasSeq!(
-            staticMap!(Pred, BaseFields),
-            FieldRefTuple!(typeof(__traits(getMember, T, AliasedFieldNames))));
+            public alias FieldRefTuple = AliasSeq!(
+                staticMap!(Pred, BaseFields),
+                FieldRefTuple!(typeof(__traits(getMember, T, AliasedFieldNames))));
+        }
     }
 
     private alias Pred (string name) = FieldRef!(T, name);

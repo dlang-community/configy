@@ -156,6 +156,7 @@ import std.format;
 import std.getopt;
 import std.meta;
 import std.range;
+import std.stdio;
 import std.traits;
 import std.typecons : Nullable, nullable, tuple;
 
@@ -272,7 +273,7 @@ public struct CLIArgs
         path = Path of the file to read from
         args = Command line arguments on which `parse` has been called
         strict = Whether the parsing should reject unknown keys in the
-                 document (default: `true`)
+                 document, warn, or ignore them (default: `StrictMode.Error`)
 
     Returns:
         An initialized `Config` instance if reading/parsing was successful;
@@ -280,25 +281,15 @@ public struct CLIArgs
 
 *******************************************************************************/
 
-public Nullable!T parseConfigFileSimple (T) (string path, bool strict = true)
+public Nullable!T parseConfigFileSimple (T) (string path, StrictMode strict = StrictMode.Error)
 {
     return parseConfigFileSimple!(T)(CLIArgs(path), strict);
 }
 
 
 /// Ditto
-public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, bool strict = true)
+public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, StrictMode strict = StrictMode.Error)
 {
-    import std.stdio;
-
-    version (Posix)
-    {
-        import core.sys.posix.unistd : isatty;
-        const colors = isatty(stderr.fileno);
-    }
-    else
-        const colors = false;
-
     try
     {
         Node root = Loader.fromFile(args.config_path).load();
@@ -306,10 +297,7 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, bool strict = true
     }
     catch (ConfigException exc)
     {
-        if (colors)
-            stderr.writefln("%S", exc);
-        else
-            stderr.writefln("%s", exc.message());
+        exc.printException();
         return typeof(return).init;
     }
     catch (Exception exc)
@@ -321,6 +309,29 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, bool strict = true
     }
 }
 
+/*******************************************************************************
+
+    Print an Exception, potentially with colors on
+
+    Trusted because of `stderr` usage.
+
+*******************************************************************************/
+
+private void printException (scope ConfigException exc) @trusted
+{
+    version (Posix)
+    {
+        import core.sys.posix.unistd : isatty;
+        const colors = isatty(stderr.fileno);
+    }
+    else
+        const colors = false;
+
+    if (colors)
+        stderr.writefln("%S", exc);
+    else
+        stderr.writefln("%s", exc.message());
+}
 
 /*******************************************************************************
 
@@ -330,7 +341,7 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, bool strict = true
         cmdln = command-line arguments (containing the path to the config)
         path = When parsing a string, the path corresponding to it
         strict = Whether the parsing should reject unknown keys in the
-                 document (default: `true`)
+                 document, warn, or ignore them (default: `StrictMode.Error`)
 
     Throws:
         `Exception` if parsing the config file failed.
@@ -340,14 +351,14 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, bool strict = true
 
 *******************************************************************************/
 
-public T parseConfigFile (T) (in CLIArgs cmdln, bool strict = true)
+public T parseConfigFile (T) (in CLIArgs cmdln, StrictMode strict = StrictMode.Error)
 {
     Node root = Loader.fromFile(cmdln.config_path).load();
     return parseConfig!T(cmdln, root, strict);
 }
 
 /// ditto
-public T parseConfigString (T) (string data, string path, bool strict = true)
+public T parseConfigString (T) (string data, string path, StrictMode strict = StrictMode.Error)
 {
     CLIArgs cmdln = { config_path: path };
     Node root = Loader.fromString(data).load();
@@ -365,7 +376,7 @@ public T parseConfigString (T) (string data, string path, bool strict = true)
       T = Type of the config struct to fill
       cmdln = Command line arguments
       node = The root node matching `T`
-      strict = Whether to perform strict parsing
+      strict = Action to take when encountering unknown keys in the document
       initPath = Unused
 
     Returns:
@@ -378,7 +389,7 @@ public T parseConfigString (T) (string data, string path, bool strict = true)
 *******************************************************************************/
 
 public T parseConfig (T) (
-    in CLIArgs cmdln, Node node, bool strict = true, string initPath = null)
+    in CLIArgs cmdln, Node node, StrictMode strict = StrictMode.Error, string initPath = null)
 {
     static assert(is(T == struct), "`" ~ __FUNCTION__ ~
                   "` should only be called with a `struct` type as argument, not: `" ~
@@ -388,7 +399,9 @@ public T parseConfig (T) (
     {
     case NodeID.mapping:
             dbgWrite("Parsing config '%s', strict: %s, initPath: %s",
-                     fullyQualifiedName!T, strict.paintBool(true),
+                     fullyQualifiedName!T,
+                     strict == StrictMode.Warn ?
+                       strict.paint(Yellow) : strict.paintIf(!!strict, Green, Red),
                      initPath.length ? initPath : "(none)");
         return node.parseMapping!T(initPath, T.init, const(Context)(cmdln, strict), null);
     case NodeID.sequence:
@@ -398,6 +411,23 @@ public T parseConfig (T) (
     }
 }
 
+/*******************************************************************************
+
+    The behavior to have when encountering a field in YAML not present
+    in the config definition.
+
+*******************************************************************************/
+
+public enum StrictMode
+{
+    /// Issue an error by throwing an `UnknownKeyConfigException`
+    Error  = 0,
+    /// Write a message to `stderr`, but continue processing the file
+    Warn   = 1,
+    /// Be silent and do nothing
+    Ignore = 2,
+}
+
 /// Used to pass around configuration
 private struct Context
 {
@@ -405,7 +435,7 @@ private struct Context
     private CLIArgs cmdln;
 
     ///
-    private bool strict;
+    private StrictMode strict;
 }
 
 /// Helper template for `staticMap` used for strict mode
@@ -435,15 +465,26 @@ private T parseMapping (T)
                            FR.Name ~ "` or change that of `" ~ FR.FieldName ~ "`");
     }
 
-    if (ctx.strict)
+    if (ctx.strict != StrictMode.Ignore)
     {
         /// First, check that all the sections found in the mapping are present in the type
         /// If not, the user might have made a typo.
         immutable string[] fieldNames = [ FieldsName!T ];
         foreach (const ref Node key, const ref Node value; node)
+        {
             if (!fieldNames.canFind(key.as!string))
-                throw new UnknownKeyConfigException(
-                    path, key.as!string, fieldNames, key.startMark());
+            {
+                if (ctx.strict == StrictMode.Warn)
+                {
+                    scope exc = new UnknownKeyConfigException(
+                        path, key.as!string, fieldNames, key.startMark());
+                    exc.printException();
+                }
+                else
+                    throw new UnknownKeyConfigException(
+                        path, key.as!string, fieldNames, key.startMark());
+            }
+        }
     }
 
     const enabledState = node.isMappingEnabled!T(defaultValue);

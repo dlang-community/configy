@@ -594,3 +594,33 @@ unittest
     static assert(!is(typeof(parseConfigString!Config("hello: world\n", "/dev/null"))));
     static assert(!is(typeof(parseConfigString!MyUnion("hello: world\n", "/dev/null"))));
 }
+
+// Test the `@Key` attribute
+unittest
+{
+    static struct Interface
+    {
+        string name;
+        string static_ip;
+    }
+
+    static struct Config
+    {
+        string profile;
+
+        @Key("name")
+        immutable(Interface)[] ifaces = [
+            Interface("lo", "127.0.0.1"),
+        ];
+    }
+
+    auto c = parseConfigString!Config(`profile: default
+ifaces:
+  eth0:
+    static_ip: "192.168.1.42"
+  lo:
+    static_ip: "127.0.0.42"
+`, "/dev/null");
+    assert(c.ifaces.length == 2);
+    assert(c.ifaces == [ Interface("eth0", "192.168.1.42"), Interface("lo", "127.0.0.42")]);
+}

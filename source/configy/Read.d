@@ -523,7 +523,7 @@ private T parseMapping (T)
 
         if (auto ptr = FR.FieldName in fieldDefaults)
         {
-            dbgWrite("Found %s (%s.%s) in `fieldDefaults",
+            dbgWrite("Found %s (%s.%s) in `fieldDefaults`",
                      FR.Name.paint(Cyan), path.paint(Cyan), FR.FieldName.paint(Cyan));
 
             if (ctx.strict && FR.FieldName in node)

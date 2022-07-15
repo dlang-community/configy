@@ -892,54 +892,7 @@ private struct DurationPseudoMapping
     }
 }
 
-private auto parseDefaultMapping (alias SFR) (
-    string path, string firstMissing, in Context ctx)
-{
-    static assert(is(SFR.Type == struct), "Internal error: `parseDefaultMapping` called with non-struct");
-
-    string[string] emptyMapping;
-    const enabledState = Node(emptyMapping).isMappingEnabled!(SFR.Type)(SFR.Default);
-
-    auto convert (string FName) ()
-    {
-        alias FR = FieldRef!(SFR.Type, FName);
-        const npath = path.addPath(FName);
-
-        // See `isMappingEnabled`
-        if (!enabledState)
-        {
-            static if (FName == "enabled")
-                return false;
-            else static if (FName == "disabled")
-                return true;
-            else
-                return FR.Default;
-        }
-
-        // If it has converters, we should not recurse into it
-        static if (FR.Optional)
-            return FR.Default;
-        else static if (mightBeOptional!FR)
-            return parseDefaultMapping!FR(npath, firstMissing, ctx);
-        else
-        {
-            node.enforce(false, "Field '%s' is not optional (first undefined: %s)",
-                   npath, firstMissing);
-            return FR.Default;
-        }
-    }
-
-    static if (hasFieldwiseCtor!(SFR.Type))
-        return SFR.Type(staticMap!(convert, FieldNameTuple!(SFR.Type)));
-    else
-    {
-        node.enforce(false, "Field '%s' is not optional (first undefined: %s)",
-               path, firstMissing);
-        return SFR.Type.init; // Just so that the compiler doesn't get confused
-    }
-}
-
-/// Evaluates to `true` if we should recurse into the struct via `parseDefaultMapping`
+/// Evaluates to `true` if we should recurse into the struct via `parseMapping`
 private enum mightBeOptional (alias FR) = is(FR.Type == struct) &&
     !is(immutable(FR.Type) == immutable(core.time.Duration)) &&
     !hasConverter!(FR.Ref) && !hasFromString!(FR.Type) && !hasStringCtor!(FR.Type);

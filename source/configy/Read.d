@@ -667,7 +667,12 @@ private FR.Type parseField (alias FR)
         return wrapException(FR.Type(node.as!string), path, node.startMark());
 
     else static if (is(immutable(FR.Type) == immutable(core.time.Duration)))
-        return parseDuration!(FR)(node, path, defaultValue, ctx);
+    {
+        if (node.nodeID != NodeID.mapping)
+            throw new DurationTypeConfigException(node, path);
+        return node.parseMapping!(DurationMapping)(
+            path, DurationMapping.make(defaultValue), ctx, null).opCast!Duration;
+    }
 
     else static if (is(FR.Type == struct))
     {
@@ -812,64 +817,8 @@ private T wrapException (T) (lazy T exp, string path, Mark position,
         throw new ConstructionException(exc, path, position, file, line);
 }
 
-/*******************************************************************************
-
-    Parse a `core.time : Duration` from the YAML
-
-*******************************************************************************/
-
-private core.time.Duration parseDuration (alias FR)
-    (Node node, string path, in core.time.Duration defaultValue, in Context ctx)
-{
-    // Try second form first as it convey the developer's intent explicitly
-    static foreach (Suffix; DurationSuffixes)
-    {
-        static if (FR.Name.endsWith(Suffix))
-        {
-            // Since we don't have flow control at CT, we have to rely on `is()`
-            // check to see if variables have been defined... Ugly but it works.
-            // We would get "Warning: Statement is not reachable" otherwise.
-            enum hasMatch = true;
-
-            if (node.nodeID != NodeID.scalar)
-                throw new TypeConfigException(node, "integer value (scalar)", path);
-
-            return core.time.dur!(Suffix[1 .. $])(node.as!long);
-        }
-    }
-    // First form, sum all possible fields
-    static if (!is(typeof(hasMatch)))
-    {
-        if (node.nodeID != NodeID.mapping)
-            throw new DurationTypeConfigException(node, path, DurationSuffixes);
-        auto result = node.parseMapping!DurationPseudoMapping(
-            path, DurationPseudoMapping.init, ctx, null);
-        bool hasOneSet;
-    FOREACH: foreach (field; result.tupleof)
-            if ((hasOneSet = field.set) == true)
-                break FOREACH;
-
-        if (!hasOneSet)
-        {
-            static if (FR.Optional)
-                return defaultValue;
-            else
-                throw new ConfigExceptionImpl("Expected one of the field's values to be set",
-                                            path, null, node.startMark());
-        }
-
-        return result.opCast!Duration();
-    }
-}
-
-/// Supported suffix names
-private immutable DurationSuffixes = [
-    "_weeks", "_days", "_hours", "_minutes", "_seconds",
-    "_msecs", "_usecs", "_hnsecs", "_nsecs",
-];
-
 /// Allows us to reuse parseMapping and strict parsing
-private struct DurationPseudoMapping
+private struct DurationMapping
 {
     public SetInfo!long weeks;
     public SetInfo!long days;
@@ -880,6 +829,36 @@ private struct DurationPseudoMapping
     public SetInfo!long usecs;
     public SetInfo!long hnsecs;
     public SetInfo!long nsecs;
+
+    private static DurationMapping make (Duration def) @safe pure nothrow @nogc
+    {
+        typeof(return) result;
+        auto fullSplit = def.split();
+        result.weeks = SetInfo!long(fullSplit.weeks, fullSplit.weeks != 0);
+        result.days = SetInfo!long(fullSplit.days, fullSplit.days != 0);
+        result.hours = SetInfo!long(fullSplit.hours, fullSplit.hours != 0);
+        result.minutes = SetInfo!long(fullSplit.minutes, fullSplit.minutes != 0);
+        result.seconds = SetInfo!long(fullSplit.seconds, fullSplit.seconds != 0);
+        result.msecs = SetInfo!long(fullSplit.msecs, fullSplit.msecs != 0);
+        result.usecs = SetInfo!long(fullSplit.usecs, fullSplit.usecs != 0);
+        result.hnsecs = SetInfo!long(fullSplit.hnsecs, fullSplit.hnsecs != 0);
+        // nsecs is ignored by split as it's not representable in `Duration`
+        return result;
+    }
+
+    ///
+    public void validate () const @safe
+    {
+        // That check should never fail, as the YAML parser would error out,
+        // but better be safe than sorry.
+        foreach (field; this.tupleof)
+            if (field.set)
+                return;
+
+        throw new Exception(
+            "Expected at least one of the components (weeks, days, hours, " ~
+            "minutes, seconds, msecs, usecs, hnsecs, nsecs) to be set");
+    }
 
     ///  Allow conversion to a `Duration`
     public Duration opCast (T : Duration) () const scope @safe pure nothrow @nogc

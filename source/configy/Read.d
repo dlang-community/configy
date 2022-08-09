@@ -564,7 +564,7 @@ private T parseMapping (T)
         // from its default value, or if it has the `Optional` UDA.
         // In that case, just return this value.
         static if (FR.Optional)
-            return FR.Default
+            return default_
                 .dbgWriteRet("Using default value '%s' for optional field '%s'", FR.FieldName.paint(Cyan));
 
         // The field is not present, but it could be because it is an optional section.
@@ -579,7 +579,7 @@ private T parseMapping (T)
         {
             const npath = path.addPath(FR.Name);
             string[string] aa;
-            return Node(aa).parseMapping!(FR.Type)(npath, FR.Default, ctx, null);
+            return Node(aa).parseMapping!(FR.Type)(npath, default_, ctx, null);
         }
         else
             throw new MissingKeyException(path, FR.Name, node.startMark());

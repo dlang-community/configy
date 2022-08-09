@@ -585,6 +585,34 @@ unittest
     assert(c.names == 2);
 }
 
+unittest
+{
+    static struct BuildTemplate
+    {
+        string targetName;
+        string platform;
+    }
+    static struct BuildConfig
+    {
+        BuildTemplate config;
+        alias config this;
+    }
+    static struct Config
+    {
+        string name;
+
+        @Optional BuildConfig config;
+        alias config this;
+    }
+
+    auto c = parseConfigString!Config("name: dummy\n", "/dev/null");
+    assert(c.name == "dummy");
+
+    auto c2 = parseConfigString!Config("name: dummy\nplatform: windows\n", "/dev/null");
+    assert(c2.name == "dummy");
+    assert(c2.config.platform == "windows");
+}
+
 // Make sure unions don't compile
 unittest
 {

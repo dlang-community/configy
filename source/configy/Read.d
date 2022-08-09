@@ -446,7 +446,20 @@ private enum FieldRefToName (alias FR) = FR.Name;
 /// Returns: An alias sequence of field names, taking UDAs (`@Name` et al) into account
 private alias FieldsName (T) = staticMap!(FieldRefToName, FieldRefTuple!T);
 
-/// Parse a single mapping, recurse as needed
+/*******************************************************************************
+
+    Parse a mapping from `node` into an instance of `T`
+
+    Params:
+      node = The YAML node object matching the struct being read
+      path = The runtime path to this mapping, used for nested types
+      defaultValue = The default value to use for `T`, which can be different
+                     from `T.init` when recursing into fields with initializers.
+      ctx = A context where properties that need to be conserved during
+            recursion are stored
+      fieldDefaults = Default value for some fields, used for `Key` recursion
+
+*******************************************************************************/
 private T parseMapping (T)
     (Node node, string path, auto ref T defaultValue, in Context ctx, in Node[string] fieldDefaults)
 {

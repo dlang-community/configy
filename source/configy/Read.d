@@ -380,7 +380,6 @@ public T parseConfigString (T) (string data, string path, StrictMode strict = St
       cmdln = Command line arguments
       node = The root node matching `T`
       strict = Action to take when encountering unknown keys in the document
-      initPath = Unused
 
     Returns:
       An instance of `T` filled with the content of `node`
@@ -392,7 +391,7 @@ public T parseConfigString (T) (string data, string path, StrictMode strict = St
 *******************************************************************************/
 
 public T parseConfig (T) (
-    in CLIArgs cmdln, Node node, StrictMode strict = StrictMode.Error, string initPath = null)
+    in CLIArgs cmdln, Node node, StrictMode strict = StrictMode.Error)
 {
     static assert(is(T == struct), "`" ~ __FUNCTION__ ~
                   "` should only be called with a `struct` type as argument, not: `" ~
@@ -401,13 +400,12 @@ public T parseConfig (T) (
     final switch (node.nodeID)
     {
     case NodeID.mapping:
-            dbgWrite("Parsing config '%s', strict: %s, initPath: %s",
+            dbgWrite("Parsing config '%s', strict: %s",
                      fullyQualifiedName!T,
                      strict == StrictMode.Warn ?
-                       strict.paint(Yellow) : strict.paintIf(!!strict, Green, Red),
-                     initPath.length ? initPath : "(none)");
+                       strict.paint(Yellow) : strict.paintIf(!!strict, Green, Red));
             return node.parseMapping!(StructFieldRef!T)(
-                initPath, T.init, const(Context)(cmdln, strict), null);
+                null, T.init, const(Context)(cmdln, strict), null);
     case NodeID.sequence:
     case NodeID.scalar:
     case NodeID.invalid:

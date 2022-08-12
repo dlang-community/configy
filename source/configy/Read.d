@@ -830,6 +830,8 @@ private T wrapException (T) (lazy T exp, string path, Mark position,
 {
     try
         return exp;
+    catch (ConfigException exc)
+        throw exc;
     catch (Exception exc)
         throw new ConstructionException(exc, path, position, file, line);
 }

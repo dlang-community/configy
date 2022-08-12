@@ -100,7 +100,6 @@ unittest
         Config2 c2 = { c1dup: { integer2: 69 } };
     }
 
-    pragma(msg, FieldRef!(Config3, "c2").Type);
     static assert(is(FieldRef!(Config3, "c2").Type == Config2));
     static assert(FieldRef!(Config3, "c2").Default != Config2.init);
     static assert(FieldRef!(Config2, "message").Default == Config2.init.message);

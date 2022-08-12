@@ -705,21 +705,13 @@ private FR.Type parseField (alias FR)
         if (node.nodeID != NodeID.mapping)
             throw new TypeConfigException(node, "mapping (associative array)", path);
 
-        static struct AAFieldRef
-        {
-            ///
-            private enum Ref = E.init;
-            ///
-            private alias Type = E;
-        }
-
         // Note: As of June 2022 (DMD v2.100.0), associative arrays cannot
         // have initializers, hence their UX for config is less optimal.
         return node.mapping().map!(
                 (Node.Pair pair) {
                     return tuple(
                         pair.key.get!K,
-                        pair.value.parseField!(AAFieldRef)(
+                        pair.value.parseField!(NestedFieldRef!(E, FR))(
                             format("%s[%s]", path, pair.key.as!string), E.init, ctx));
                 }).assocArray();
 
@@ -758,20 +750,11 @@ private FR.Type parseField (alias FR)
             if (node.nodeID != NodeID.sequence)
                 throw new TypeConfigException(node, "sequence (array)", path);
 
-            // Only those two fields are used by `parseField`
-            static struct ArrayFieldRef
-            {
-                ///
-                private enum Ref = E.init;
-                ///
-                private alias Type = E;
-            }
-
             // We pass `E.init` as default value as it is not going to be used:
             // Either there is something in the YAML document, and that will be
             // converted, or `sequence` will not iterate.
             return node.sequence.enumerate.map!(
-                kv => kv.value.parseField!(ArrayFieldRef)(
+                kv => kv.value.parseField!(NestedFieldRef!(E, FR))(
                     format("%s[%s]", path, kv.index), E.init, ctx))
                 .array();
         }

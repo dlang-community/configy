@@ -117,6 +117,9 @@ unittest
 package template StructFieldRef (ST)
 {
     ///
+    public enum Ref = ST.init;
+
+    ///
     public alias Type = ST;
 
     ///
@@ -124,6 +127,22 @@ package template StructFieldRef (ST)
 
     ///
     public enum Optional = false;
+}
+
+/// A pseudo `FieldRef` for nested types (e.g. arrays / associative arrays)
+package template NestedFieldRef (ElemT, alias FR)
+{
+    ///
+    public enum Ref = ElemT.init;
+    ///
+    public alias Type = ElemT;
+    ///
+    public enum Name = FR.Name;
+    ///
+    public enum FieldName = FR.FieldName;
+    /// Element or keys are never optional
+    public enum Optional = false;
+
 }
 
 /// Get a tuple of `FieldRef` from a `struct`

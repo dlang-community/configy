@@ -143,6 +143,7 @@ module configy.Read;
 public import configy.Attributes;
 public import configy.Exceptions : ConfigException;
 import configy.Exceptions;
+import configy.FieldRef;
 import configy.Utils;
 
 import dyaml.exception;
@@ -441,12 +442,6 @@ private struct Context
     private StrictMode strict;
 }
 
-/// Helper template for `staticMap` used for strict mode
-private enum FieldRefToName (alias FR) = FR.Name;
-
-/// Returns: An alias sequence of field names, taking UDAs (`@Name` et al) into account
-private alias FieldsName (T) = staticMap!(FieldRefToName, FieldRefTuple!T);
-
 /*******************************************************************************
 
     Parse a mapping from `node` into an instance of `T`
@@ -462,7 +457,6 @@ private alias FieldsName (T) = staticMap!(FieldRefToName, FieldRefTuple!T);
       fieldDefaults = Default value for some fields, used for `Key` recursion
 
 *******************************************************************************/
-/// Parse a single mapping, recurse as needed
 private TLFR.Type parseMapping (alias TLFR)
     (Node node, string path, auto ref TLFR.Type defaultValue,
      in Context ctx, in Node[string] fieldDefaults)
@@ -910,109 +904,6 @@ private auto viaConverter (alias FR) (Node node)
     return Converters[0].converter(node);
 }
 
-/*******************************************************************************
-
-    A reference to a field in a `struct`
-
-    The compiler sometimes rejects passing fields by `alias`, or complains about
-    missing `this` (meaning it tries to evaluate the value). Sometimes, it also
-    discards the UDAs.
-
-    To prevent this from happening, we always pass around a `FieldRef`,
-    which wraps the parent struct type (`T`) and the name of the field (`name`).
-
-    To avoid any issue, eponymous usage is also avoided, hence the reference
-    needs to be accessed using `Ref`. A convenience `Type` alias is provided,
-    as well as `Default`.
-
-*******************************************************************************/
-
-private template FieldRef (alias T, string name, bool forceOptional = false)
-{
-    // Renamed imports as the names exposed by this template clash
-    // with what we import.
-    import configy.Attributes : CAName = Name, CAOptional = Optional;
-
-    /// The reference to the field
-    public alias Ref = __traits(getMember, T, name);
-
-    /// Type of the field
-    public alias Type = typeof(Ref);
-
-    /// The name of the field in the struct itself
-    public alias FieldName = name;
-
-    /// The name used in the configuration field (taking `@Name` into account)
-    static if (hasUDA!(Ref, CAName))
-    {
-        static assert (getUDAs!(Ref, CAName).length == 1,
-                       "Field `" ~ fullyQualifiedName!(Ref) ~
-                       "` cannot have more than one `Name` attribute");
-
-        public immutable Name = getUDAs!(Ref, CAName)[0].name;
-    }
-    else
-        public immutable Name = FieldName;
-
-    /// Default value of the field (may or may not be `Type.init`)
-    public enum Default = __traits(getMember, T.init, name);
-
-    /// Evaluates to `true` if this field is to be considered optional
-    /// (does not need to be present in the YAML document)
-    public enum Optional = forceOptional ||
-        hasUDA!(Ref, CAOptional) ||
-        is(immutable(Type) == immutable(bool)) ||
-        is(Type : SetInfo!FT, FT) ||
-        (Default != Type.init);
-}
-
-/// A pseudo `FieldRef` used for structs which are not fields (top-level)
-private template StructFieldRef (ST)
-{
-    ///
-    public alias Type = ST;
-
-    ///
-    public enum Default = ST.init;
-
-    ///
-    public enum Optional = false;
-}
-
-/// Get a tuple of `FieldRef` from a `struct`
-private template FieldRefTuple (T)
-{
-    static assert(is(T == struct),
-                  "Argument " ~ T.stringof ~ " to `FieldRefTuple` should be a `struct`");
-
-    ///
-    static if (__traits(getAliasThis, T).length == 0)
-        public alias FieldRefTuple = staticMap!(Pred, FieldNameTuple!T);
-    else
-    {
-        /// Tuple of strings of aliased fields
-        /// As of DMD v2.100.0, only a single alias this is supported in D.
-        private immutable AliasedFieldNames = __traits(getAliasThis, T);
-        static assert(AliasedFieldNames.length == 1, "Multiple `alias this` are not supported");
-
-        // Ignore alias to functions (if it's a property we can't do anything)
-        static if (isSomeFunction!(__traits(getMember, T, AliasedFieldNames)))
-            public alias FieldRefTuple = staticMap!(Pred, FieldNameTuple!T);
-        else
-        {
-            /// "Base" field names minus aliased ones
-            private immutable BaseFields = Erase!(AliasedFieldNames, FieldNameTuple!T);
-            static assert(BaseFields.length == FieldNameTuple!(T).length - 1);
-
-            public alias FieldRefTuple = AliasSeq!(
-                staticMap!(Pred, BaseFields),
-                FieldRefTuple!(typeof(__traits(getMember, T, AliasedFieldNames))));
-        }
-    }
-
-    private alias Pred (string name) = FieldRef!(T, name);
-}
-
 /// Helper predicate
 private template NameIs (string searching)
 {
@@ -1077,42 +968,6 @@ private struct EnabledState
 
     /// Value of the field, interpretation depends on `field`
     private bool fieldValue;
-}
-
-unittest
-{
-    static struct Config1
-    {
-        int integer2 = 42;
-        @Name("notStr2")
-        @(42) string str2;
-    }
-
-    static struct Config2
-    {
-        Config1 c1dup = { 42, "Hello World" };
-        string message = "Something";
-    }
-
-    static struct Config3
-    {
-        Config1 c1;
-        int integer;
-        string str;
-        Config2 c2 = { c1dup: { integer2: 69 } };
-    }
-
-    static assert(is(FieldRef!(Config3, "c2").Type == Config2));
-    static assert(FieldRef!(Config3, "c2").Default != Config2.init);
-    static assert(FieldRef!(Config2, "message").Default == Config2.init.message);
-    alias NFR1 = FieldRef!(Config3, "c2");
-    alias NFR2 = FieldRef!(NFR1.Ref, "c1dup");
-    alias NFR3 = FieldRef!(NFR2.Ref, "integer2");
-    alias NFR4 = FieldRef!(NFR2.Ref, "str2");
-    static assert(hasUDA!(NFR4.Ref, int));
-
-    static assert(FieldRefTuple!(Config3)[1].Name == "integer");
-    static assert(FieldRefTuple!(FieldRefTuple!(Config3)[0].Type)[1].Name == "notStr2");
 }
 
 /// Evaluates to `true` if `T` is a `struct` with a default ctor

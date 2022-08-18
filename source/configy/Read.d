@@ -594,6 +594,10 @@ private TLFR.Type parseMapping (alias TLFR)
                           "` is the target of an `alias this` and cannot have a `@Converter` attribute");
 
             alias convertW(string FieldName) = convert!(FieldRef!(FR.Type, FieldName, FR.Optional));
+            static assert(hasFieldWiseCtor!FR, "Type `" ~ FR.Type.stringof
+                          ~ "` used for `alias this` in type `" ~ TLFR.Type.stringof
+                          ~ "` does not support field-wise (default) construction: "
+                          ~ "Add field-wise constructor, a string constructor, or a converter");
             return FR.Type(staticMap!(convertW, FieldNameTuple!(FR.Type)));
         }
         else
@@ -632,6 +636,9 @@ private TLFR.Type parseMapping (alias TLFR)
     // This might trigger things like "`this` is not accessible".
     // In this case, the user most likely needs to provide a converter.
     alias convertWrapper(string FieldName) = convert!(FieldRef!(TLFR.Type, FieldName));
+    static assert(hasFieldWiseCtor!TLFR, "Type `" ~ TLFR.Type.stringof
+                  ~ "` does not support field-wise (default) construction: "
+                  ~ "Add field-wise constructor, a string constructor, or a converter");
     return doValidation(TLFR.Type(staticMap!(convertWrapper, FieldNameTuple!(TLFR.Type))));
 }
 
@@ -953,8 +960,12 @@ private struct EnabledState
     private bool fieldValue;
 }
 
-/// Evaluates to `true` if `T` is a `struct` with a default ctor
-private enum hasFieldwiseCtor (T) = (is(T == struct) && is(typeof(() => T(T.init.tupleof))));
+/// Check if this type can be instantiated by the sum of its fields (usually default ctor)
+private template hasFieldWiseCtor (alias FR)
+{
+    private alias InitVal(string FieldName) = FieldRef!(FR.Type, FieldName).Default;
+    enum hasFieldWiseCtor = is(typeof(FR.Type(staticMap!(InitVal, FieldNameTuple!(FR.Type)))));
+}
 
 /// Evaluates to `true` if `T` has a static method that accepts a `string` and returns a `T`
 private enum hasFromString (T) = is(typeof(T.fromString(string.init)) : T);
@@ -972,7 +983,7 @@ unittest
         string otherValue;
     }
 
-    static assert( hasFieldwiseCtor!Simple);
+    static assert( hasFieldWiseCtor!(StructFieldRef!Simple));
     static assert(!hasStringCtor!Simple);
 
     static struct PubKey
@@ -982,13 +993,8 @@ unittest
         this (string hex) @safe pure nothrow @nogc{}
     }
 
-    static assert(!hasFieldwiseCtor!PubKey);
+    static assert(!hasFieldWiseCtor!(StructFieldRef!PubKey));
     static assert( hasStringCtor!PubKey);
-
-    static assert(!hasFieldwiseCtor!string);
-    static assert(!hasFieldwiseCtor!int);
-    static assert(!hasStringCtor!string);
-    static assert(!hasStringCtor!int);
 }
 
 /// Convenience function to extend a YAML path

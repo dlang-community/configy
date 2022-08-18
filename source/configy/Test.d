@@ -691,3 +691,28 @@ unittest
     catch (Exception exc)
         assert(exc.toString() == `/dev/null(2:6): data.array[0]: Parsing failed!`);
 }
+
+/// Test for error message: Has to be versioned out, uncomment to check manually
+unittest
+{
+    static struct Nested
+    {
+        int field1;
+
+        private this (string arg) {}
+    }
+
+    static struct Config
+    {
+        Nested nested;
+    }
+
+    static struct Config2
+    {
+        Nested nested;
+        alias nested this;
+    }
+
+    version(none) auto c1 = parseConfigString!Config(null, null);
+    version(none) auto c2 = parseConfigString!Config2(null, null);
+}

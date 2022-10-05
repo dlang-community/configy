@@ -1043,6 +1043,7 @@ unittest
 
 /// Convenience function to extend a YAML path
 private string addPath (string opath, string newPart)
-{
+in(newPart.length)
+do {
     return opath.length ? format("%s.%s", opath, newPart) : newPart;
 }

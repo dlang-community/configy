@@ -716,3 +716,52 @@ unittest
     version(none) auto c1 = parseConfigString!Config(null, null);
     version(none) auto c2 = parseConfigString!Config2(null, null);
 }
+
+/// Test support for `fromYAML` hook
+unittest
+{
+    static struct PackageDef
+    {
+        string name;
+        @Optional string target;
+        int build = 42;
+    }
+
+    static struct Package
+    {
+        string path;
+        PackageDef def;
+
+        public static Package fromYAML (scope ConfigParser!Package parser)
+        {
+            if (parser.node.nodeID == NodeID.mapping)
+                return Package(null, parser.parseAs!PackageDef);
+            else
+                return Package(parser.parseAs!string);
+        }
+    }
+
+    static struct Config
+    {
+        string name;
+        Package[] deps;
+    }
+
+    auto c = parseConfigString!Config(
+`
+name: myPkg
+deps:
+  - /foo/bar
+  - name: foo
+    target: bar
+    build: 24
+  - name: fur
+  - /one/last/path
+`, "/dev/null");
+    assert(c.name == "myPkg");
+    assert(c.deps.length == 4);
+    assert(c.deps[0] == Package("/foo/bar"));
+    assert(c.deps[1] == Package(null, PackageDef("foo", "bar", 24)));
+    assert(c.deps[2] == Package(null, PackageDef("fur", null, 42)));
+    assert(c.deps[3] == Package("/one/last/path"));
+}

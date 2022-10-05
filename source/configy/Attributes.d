@@ -281,3 +281,54 @@ public auto converter (FT) (FT func)
                   "Error: Converter needs to be of the return type of the field, not `void`");
     return Converter!RType(func);
 }
+
+/*******************************************************************************
+
+    Interface that is passed to `fromYAML` hook
+
+    The `ConfigParser` exposes the raw YAML node (`see `node` method),
+    the path within the file (`path` method), and a simple ability to recurse
+    via `parseAs`.
+
+    Params:
+      T = The type of the structure which defines a `fromYAML` hook
+
+*******************************************************************************/
+
+public interface ConfigParser (T)
+{
+    import dyaml.node;
+    import configy.FieldRef : StructFieldRef;
+    import configy.Read : Context, parseField;
+
+    /// Returns: the node being processed
+    public inout(Node) node () inout @safe pure nothrow @nogc;
+
+    /// Returns: current location we are parsing
+    public string path () const @safe pure nothrow @nogc;
+
+    /***************************************************************************
+
+        Parse this struct as another type
+
+        This allows implementing union-like behavior, where a `struct` which
+        implements `fromYAML` can parse a simple representation as one type,
+        and one more advanced as another type.
+
+        Params:
+          OtherType = The type to parse as
+          defaultValue = The instance to use as a default value for fields
+
+    ***************************************************************************/
+
+    public final auto parseAs (OtherType)
+        (auto ref OtherType defaultValue = OtherType.init)
+    {
+        alias TypeFieldRef = StructFieldRef!OtherType;
+        return this.node().parseField!(TypeFieldRef)(
+            this.path(), defaultValue, this.context());
+    }
+
+    /// Internal use only
+    protected const(Context) context () const @safe pure nothrow @nogc;
+}

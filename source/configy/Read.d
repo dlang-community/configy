@@ -21,14 +21,17 @@
       To mark a field as optional even with its default value,
       use the `Optional` UDA: `@Optional int count = 0;`.
 
-    Converter:
-      Because config structs may contain complex types such as
-      a Phobos type, a user-defined `Amount`, or Vibe.d's `URL`,
-      one may need to apply a converter to a struct's field.
-      Converters are functions that take a YAML `Node` as argument
-      and return a type that is implicitly convertible to the field type
-      (usually just the field type). They offer the most power to users,
-      as they can inspect the YAML structure, but should be used as a last resort.
+    fromYAML:
+      Because config structs may contain complex types outside of the project's
+      control (e.g. a Phobos type, Vibe.d's `URL`, etc...) or one may want
+      the config format to be more dynamic (e.g. by exposing union-like behavior),
+      one may need to apply more custom logic than what Configy does.
+      For this use case, one can define a `fromYAML` static method in the type:
+      `static S fromYAML(scope ConfigParser!S parser)`, where `S` is the type of
+      the enclosing structure. Structs with `fromYAML` will have this method
+      called instead of going through the normal parsing rules.
+      The `ConfigParser` exposes the current path of the field, as well as the
+      raw YAML `Node` itself, allowing for maximum flexibility.
 
     Composite_Types:
       Processing starts from a `struct` at the top level, and recurse into
@@ -431,7 +434,7 @@ public enum StrictMode
 }
 
 /// Used to pass around configuration
-private struct Context
+package struct Context
 {
     ///
     private CLIArgs cmdln;
@@ -660,7 +663,7 @@ private TLFR.Type parseMapping (alias TLFR)
 
 *******************************************************************************/
 
-private FR.Type parseField (alias FR)
+package FR.Type parseField (alias FR)
     (Node node, string path, auto ref FR.Type defaultValue, in Context ctx)
 {
     if (node.nodeID == NodeID.invalid)
@@ -675,6 +678,12 @@ private FR.Type parseField (alias FR)
 
     else static if (hasConverter!(FR.Ref))
         return wrapException(node.viaConverter!(FR), path, node.startMark());
+
+    else static if (hasFromYAML!(FR.Type))
+    {
+        scope impl = new ConfigParserImpl!(FR.Type)(node, path, ctx);
+        return wrapException(FR.Type.fromYAML(impl), path, node.startMark());
+    }
 
     else static if (hasFromString!(FR.Type))
         return wrapException(FR.Type.fromString(node.as!string), path, node.startMark());
@@ -875,7 +884,8 @@ private struct DurationMapping
 /// Evaluates to `true` if we should recurse into the struct via `parseMapping`
 private enum mightBeOptional (alias FR) = is(FR.Type == struct) &&
     !is(immutable(FR.Type) == immutable(core.time.Duration)) &&
-    !hasConverter!(FR.Ref) && !hasFromString!(FR.Type) && !hasStringCtor!(FR.Type);
+    !hasConverter!(FR.Ref) && !hasFromString!(FR.Type) &&
+    !hasStringCtor!(FR.Type) && !hasFromYAML!(FR.Type);
 
 /// Convenience template to check for the presence of converter(s)
 private enum hasConverter (alias Field) = hasUDA!(Field, Converter);
@@ -891,7 +901,38 @@ private auto viaConverter (alias FR) (Node node)
 
     static assert(Converters.length == 1,
                   "Field `" ~ FR.FieldName ~ "` cannot have more than one `Converter`");
+
     return Converters[0].converter(node);
+}
+
+private final class ConfigParserImpl (T) : ConfigParser!T
+{
+    private Node node_;
+    private string path_;
+    private const(Context) context_;
+
+    /// Ctor
+    public this (Node n, string p, const Context c) scope @safe pure nothrow @nogc
+    {
+        this.node_ = n;
+        this.path_ = p;
+        this.context_ = c;
+    }
+
+    public final override inout(Node) node () inout @safe pure nothrow @nogc
+    {
+        return this.node_;
+    }
+
+    public final override string path () const @safe pure nothrow @nogc
+    {
+        return this.path_;
+    }
+
+    protected final override const(Context) context () const @safe pure nothrow @nogc
+    {
+        return this.context_;
+    }
 }
 
 /// Helper predicate
@@ -966,6 +1007,9 @@ private template hasFieldWiseCtor (alias FR)
     private alias InitVal(string FieldName) = FieldRef!(FR.Type, FieldName).Default;
     enum hasFieldWiseCtor = is(typeof(FR.Type(staticMap!(InitVal, FieldNameTuple!(FR.Type)))));
 }
+
+/// Evaluates to `true` if `T` has a static method that is designed to work with this library
+private enum hasFromYAML (T) = is(typeof(T.fromYAML(ConfigParser!(T).init)) : T);
 
 /// Evaluates to `true` if `T` has a static method that accepts a `string` and returns a `T`
 private enum hasFromString (T) = is(typeof(T.fromString(string.init)) : T);

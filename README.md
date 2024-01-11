@@ -1,4 +1,4 @@
-# Config: Simple, efficient YAML -> `struct` converter
+# Configy: Simple, efficient YAML -> `struct` converter
 
 ## Why (would I use this) ?
 

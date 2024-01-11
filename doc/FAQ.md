@@ -20,8 +20,9 @@ not part of the `struct` definition will result in an error, indicating what fie
 allowed for the section.
 This is the default as it prevent any unnoticed misconfiguration that would result from
 a typo to an optional field name.
-To disable `strict` parsing, simply pass `false` as the optional parameter to either
-`parseConfigFile`, `parseConfigString`, or `parseConfigFileSimple` method.
+To disable `strict` parsing, simply pass `StrictMode.Ignore` as the optional parameter
+to either `parseConfigFile`, `parseConfigString`, or `parseConfigFileSimple` method.
+To notify the user whithout triggering an error, use `StrictMode.Warn` instead.
 
 ### Make a field required
 

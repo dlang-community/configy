@@ -407,8 +407,8 @@ public T parseConfig (T) (
                      fullyQualifiedName!T,
                      strict == StrictMode.Warn ?
                        strict.paint(Yellow) : strict.paintIf(!!strict, Green, Red));
-            return node.parseMapping!(StructFieldRef!T)(
-                null, T.init, const(Context)(cmdln, strict), null);
+            return node.parseField!(StructFieldRef!T)(
+                null, T.init, const(Context)(cmdln, strict));
     case NodeID.sequence:
     case NodeID.scalar:
     case NodeID.invalid:

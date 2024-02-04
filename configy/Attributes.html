@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module configy.Attributes</title>
+		<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
+		<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module selected">
+						<a href="../configy/Attributes.html">Attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/Exceptions.html">Exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/FieldRef.html">FieldRef</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/Read.html">Read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/Test.html">Test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/Utils.html">Utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module configy.Attributes</h1><p>Define UDAs that can be applied to a configuration struct
+</p><section><p>This module is stand alone (a leaf module) to allow importing the UDAs
+    without importing the whole configuration parsing code.
+</p>
+</section>
+
+			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="converter" class="public" href="../configy/Attributes/converter.html">converter</a><span class="tableEntryAnnotation">(func)</span>
+							</code>
+						</td>
+						<td>Provides a means to convert a field from a <code class="lang-d"><span class="typ">Node</span></code> to a complex type
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Interfaces</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="ConfigParser" class="public" href="../configy/Attributes/config_parser.html">ConfigParser</a>
+							</code>
+						</td>
+						<td>Interface that is passed to <code class="lang-d"><span class="pln">fromYAML</span></code> hook
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Converter" class="public" href="../configy/Attributes/converter.html">Converter</a>
+							</code>
+						</td>
+						<td>Provides a means to convert a field from a <code class="lang-d"><span class="typ">Node</span></code> to a complex type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Key" class="public" href="../configy/Attributes/key.html">Key</a>
+							</code>
+						</td>
+						<td>Inform the config filler that this sequence is to be read as a mapping
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Name" class="public" href="../configy/Attributes/name.html">Name</a>
+							</code>
+						</td>
+						<td>Look up the provided name in the YAML node, instead of the field name.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Optional" class="public" href="../configy/Attributes/optional.html">Optional</a>
+							</code>
+						</td>
+						<td>An optional parameter with an initial value of <code class="lang-d"><span class="pln">T<wbr/></span><span class="pun">.</span><span class="pln">init</span></code>
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="SetInfo" class="public" href="../configy/Attributes/set_info.html">SetInfo</a>
+							</code>
+						</td>
+						<td>A field which carries informations about whether it was set or not
+</td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

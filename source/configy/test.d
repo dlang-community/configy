@@ -986,3 +986,21 @@ ds:
     catch (ConfigException exc)
         assert(exc.toString() == "/dev/null(1:11): es.enabled: Expected to be a value of type bool, but is a scalar");
 }
+
+/// Test pointers
+unittest
+{
+    static struct N {
+        @Optional int value;
+        const N* left, right;
+    }
+    auto c = parseConfigString!N(`left:
+  left:
+    value: 1
+right:
+  value: 2
+`, "/dev/null");
+    assert(c.left.left.value == 1);
+    assert(c.left.right is null);
+    assert(c.right.value == 2);
+}

@@ -73,6 +73,9 @@ package template FieldRef (alias T, string name, bool forceOptional = false)
     // Booleans are always optional
     else static if (is(immutable(Type) == immutable(bool)))
         public enum Optional = true;
+    // Same for pointers
+    else static if (is(immutable(Type) == immutable(T*), T))
+        public enum Optional = true;
     // A mandatory SetInfo would not make sense
     else static if (is(Type : SetInfo!FT, FT))
         public enum Optional = true;

@@ -332,3 +332,72 @@ public interface ConfigParser (T)
     /// Internal use only
     protected const(Context) context () const @safe pure nothrow @nogc;
 }
+
+/*******************************************************************************
+
+    Specify that a field only accept a limited set of string values.
+
+    This is similar to how `enum` symbolic names are treated, however the `enum`
+    symbolic names may not contain spaces or special character.
+
+    Params:
+      Values = Permissible values (case sensitive)
+
+*******************************************************************************/
+
+public struct Only (string[] Values) {
+    public string value;
+
+    alias value this;
+
+    public static Only fromString (scope string str) {
+        import std.algorithm.searching : canFind;
+        import std.exception : enforce;
+        import std.format;
+
+        enforce(Values.canFind(str),
+            "%s is not a valid value for this field, valid values are: %(%s, %)"
+            .format(str, Values));
+        return Only(str);
+    }
+}
+
+///
+unittest {
+    import configy.attributes : Only, Optional;
+    import configy.read : parseConfigString;
+
+    static struct CountryConfig {
+        Only!(["France", "Malta", "South Korea"]) country;
+        // Compose with other attributes too
+        @Optional Only!(["citizen", "resident", "alien"]) status;
+    }
+    static struct Config {
+        CountryConfig[] countries;
+    }
+
+    auto conf = parseConfigString!Config(`countries:
+  - country: France
+    status: citizen
+  - country: Malta
+  - country: South Korea
+    status: alien
+`, "/dev/null");
+
+    assert(conf.countries.length == 3);
+    assert(conf.countries[0].country == `France`);
+    assert(conf.countries[0].status  == `citizen`);
+    assert(conf.countries[1].country == `Malta`);
+    assert(conf.countries[1].status  is null);
+    assert(conf.countries[2].country == `South Korea`);
+    assert(conf.countries[2].status  == `alien`);
+
+    import configy.exceptions : ConfigException;
+
+    try parseConfigString!Config(`countries:
+  - country: France
+    status: expatriate
+`, "/etc/config");
+    catch (ConfigException exc)
+        assert(exc.toString() == `/etc/config(2:12): countries[0].status: expatriate is not a valid value for this field, valid values are: "citizen", "resident", "alien"`);
+}

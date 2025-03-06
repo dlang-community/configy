@@ -282,3 +282,26 @@ to be validated, one can implement a `void validate() const` method which throws
 an exception in the event of a validation failure.
 The library will rethrow this `Exception` with the file/line information pointing
 to the section itself, and not any individual field.
+
+### Limit the set of acceptable values / Use an `enum`
+
+Configy uses `std.conv : to` for converting `enum`, which means they always get converted
+to their symbolic name. The following two types will behave the same and expect values
+`APAC`, `EMEA`, and `Americas` in the YAML file.
+```D
+enum Location : string {
+  APAC     = "APAC",
+  EMEA     = "EMEA",
+  Americas = "North America",
+}
+
+enum Location2 {
+  APAC,
+  EMEA,
+  Americas,
+}
+```
+Symbolic names, unlike enum values, must be unique - Hence why they are not taken into account.
+To work around this, one may use `configy.attributes : Only`, which accepts a list of strings.
+`Location` would then be expressed as `Only!(["APAC", "EMEA", "North America"])` instead.
+It is also trivial to implement such a type if a project has specific needs.

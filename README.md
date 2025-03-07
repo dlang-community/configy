@@ -44,7 +44,7 @@ struct Config
 
 int main (string[] args)
 {
-    // `parseConfigSimple` will print to `stderr` if an error happened
+    // `parseConfigFileSimple` will print to `stderr` if an error happened
     Nullable!Config configN = parseConfigFileSimple!Config("config.yaml");
     if (configN.isNull())
         return 1;

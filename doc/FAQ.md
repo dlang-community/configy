@@ -302,3 +302,61 @@ Symbolic names, unlike enum values, must be unique - Hence why they are not take
 To work around this, one may use `configy.attributes : Only`, which accepts a list of strings.
 `Location` would then be expressed as `Only!(["APAC", "EMEA", "North America"])` instead.
 It is also trivial to implement such a type if a project has specific needs.
+
+### Implement really custom logic that Configy doesn't support
+
+Use the `fromYAML` static method:
+```
+struct Service { string name; }
+struct ServiceConfig {
+    Only!(["service"]) type;
+    string name;
+}
+
+struct Job { string position; }
+struct JobConfig {
+    Only!(["job"]) type;
+    string worker;
+}
+
+// Top level configuration
+struct Config {
+    SumType!(ServiceConfig, JobConfig) conf;
+
+    static Config fromYAML(scope ConfigParser!Config parser) {
+        const typeN = "type" in parser.node;
+        // This will point to the start of the file / section
+        enforce(typeN, "Missing required 'type' property");
+        const typeS = (*typeN).as!string;
+
+        // This is the main bit: We still have distinct configurations depending on
+        // the `type` discriminant, hence why we have declared them above.
+        if (typeS == "job") {
+            return Config(typeof(Config.conf)(parser.parseAs!JobConfig));
+        } else if (typeS == "service") {
+            return Config(typeof(Config.conf)(parser.parseAs!ServiceConfig));
+        } else {
+            throw new Exception(
+                "'%s' is not a valid value for 'type', expected one of: 'service', 'job'"
+                .format(typeS));
+        }
+    }
+}
+```
+
+Example YAML that this will accept:
+```YAML
+type: job
+worker: k8s
+```
+
+```YAML
+type: service
+name: dns
+```
+
+However, the following would fail and mention that `name` is not a valid member:
+```YAML
+type: job
+name: WRONG
+```

@@ -189,3 +189,35 @@ public RT withNode (DGT : RT function(scope Node, scope Node), RT)
 public bool has (scope Mapping map, string key) {
     return map.withNode(key, (scope Node key, scope Node value) => value !is null);
 }
+
+/// A 'simple' scalar implementation, which only contains a name and a value.
+public class SimpleScalar : Scalar {
+    /// The actual data
+    private string value;
+    /// Location of the variable
+    private Location loc;
+
+    /// Construct an instance of this class
+    public this (string value, Location loc) inout @safe pure nothrow @nogc {
+        this.value = value;
+        this.loc = loc;
+    }
+    /// Ditto
+    public this (string value, Location loc) @safe pure nothrow @nogc {
+        this.value = value;
+        this.loc = loc;
+    }
+
+    ///
+    public override string str () const scope return @safe { return this.value; }
+    ///
+    public override Location location () const scope @safe nothrow { return this.loc; }
+    ///
+    public override Type type () const scope @safe nothrow { return Type.Scalar; }
+    ///
+    public override inout(Mapping) asMapping () inout scope @safe { return null; }
+    ///
+    public override inout(Sequence) asSequence () inout scope @safe { return null; }
+    ///
+    public override inout(SimpleScalar) asScalar () inout scope @safe { return this; }
+}

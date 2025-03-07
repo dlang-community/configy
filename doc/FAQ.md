@@ -2,9 +2,6 @@
 
 The following list covers common use-case encountered while writing a configuration.
 
-When designing a configuration format, it is usually simpler to write the `struct`s,
-and perform any adaptation to make the YAML result nice afterwards.
-
 When multiple ways to handle the same outcome exists, the recipes will list them by order of importance.
 For example, when considering having an optional field, first consider giving it an initializer,
 and only if the `.init` problem present itself, use `@Optional`.

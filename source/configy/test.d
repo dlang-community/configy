@@ -1004,3 +1004,49 @@ right:
     assert(c.left.right is null);
     assert(c.right.value == 2);
 }
+
+/// Documentation for `fromYAML`
+unittest {
+    import std.exception;
+    import std.sumtype;
+
+    static struct Service { string name; }
+    static struct ServiceConfig {
+        Only!(["service"]) type;
+        string name;
+    }
+
+    static struct Job { string position; }
+    static struct JobConfig {
+        Only!(["job"]) type;
+        string worker;
+    }
+
+    static struct Config {
+        SumType!(ServiceConfig, JobConfig) conf;
+
+        static Config fromYAML(scope ConfigParser!Config parser) {
+            const typeN = "type" in parser.node;
+            // This will point to the start of the file / section
+            enforce(typeN, "Missing required 'type' property");
+            const typeS = (*typeN).as!string;
+            if (typeS == "job") {
+                return Config(typeof(Config.conf)(parser.parseAs!JobConfig));
+            } else if (typeS == "service") {
+                return Config(typeof(Config.conf)(parser.parseAs!ServiceConfig));
+            } else {
+                throw new Exception(
+                    "'%s' is not a valid value for 'type', expected one of: 'service', 'job'"
+                    .format(typeS));
+            }
+        }
+    }
+
+    auto job = parseConfigString!Config("type: job\nworker: k8s", "/dev/null");
+    const jobname = job.conf.match!((JobConfig jc) => jc.worker, (ServiceConfig sc) => assert(0));
+    assert(jobname == "k8s");
+
+    auto service = parseConfigString!Config("type: service\nname: dns", "/dev/null");
+    const servicename = service.conf.match!((JobConfig jc) => assert(0), (ServiceConfig sc) => sc.name);
+    assert(servicename == "dns");
+}

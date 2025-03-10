@@ -416,6 +416,6 @@ package struct Location {
     /// Helper function
     package static Location get (Node n) @safe pure nothrow @nogc {
         auto m = n.startMark();
-        return Location(m.name, m.line, m.column);
+        return Location(m.name, m.line + 1, m.column + 1);
     }
 }

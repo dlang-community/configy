@@ -399,5 +399,5 @@ unittest {
     status: expatriate
 `, "/etc/config");
     catch (ConfigException exc)
-        assert(exc.toString() == `/etc/config(2:12): countries[0].status: expatriate is not a valid value for this field, valid values are: "citizen", "resident", "alien"`);
+        assert(exc.toString() == `/etc/config(3:13): countries[0].status: expatriate is not a valid value for this field, valid values are: "citizen", "resident", "alien"`);
 }

@@ -125,7 +125,7 @@ unittest
     }
     catch (Exception exc)
     {
-        assert(exc.toString() == "/dev/null(1:10): node.timeout: Field is of type scalar, " ~
+        assert(exc.toString() == "/dev/null(2:11): node.timeout: Field is of type scalar, " ~
                "but expected a mapping with at least one of: weeks, days, hours, minutes, " ~
                "seconds, msecs, usecs, hnsecs, nsecs");
     }
@@ -144,9 +144,9 @@ unittest
     catch (ConfigException e)
     {
         assert(format("%s", e) ==
-               "/dev/null(0:0): value: Key is not a valid member of this section. There are 1 valid keys: required");
+               "/dev/null(1:1): value: Key is not a valid member of this section. There are 1 valid keys: required");
         assert(format("%S", e) ==
-               format("%s/dev/null%s(%s0%s:%s0%s): %svalue%s: Key is not a valid member of this section. " ~
+               format("%s/dev/null%s(%s1%s:%s1%s): %svalue%s: Key is not a valid member of this section. " ~
                       "There are %s1%s valid keys: %srequired%s", Yellow, Reset, Cyan, Reset, Cyan, Reset,
                       Yellow, Reset, Yellow, Reset, Green, Reset));
     }
@@ -174,7 +174,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(0:5): map: Expected to be a mapping (object), but is a scalar");
+        assert(exc.toString() == "/dev/null(1:6): map: Expected to be a mapping (object), but is a scalar");
     }
 
     try
@@ -184,7 +184,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(1:2): map: Expected to be a mapping (object), but is a sequence");
+        assert(exc.toString() == "/dev/null(2:3): map: Expected to be a mapping (object), but is a sequence");
     }
 
     try
@@ -194,7 +194,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(1:2): scalar: Expected to be a value of type int, but is a sequence");
+        assert(exc.toString() == "/dev/null(2:3): scalar: Expected to be a value of type int, but is a sequence");
     }
 
     try
@@ -204,7 +204,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(1:2): scalar: Expected to be a value of type int, but is a mapping");
+        assert(exc.toString() == "/dev/null(2:3): scalar: Expected to be a value of type int, but is a mapping");
     }
 }
 
@@ -225,7 +225,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(0:0): valeu: Key is not a valid member of this section. Did you mean: value, valhu");
+        assert(exc.toString() == "/dev/null(1:1): valeu: Key is not a valid member of this section. Did you mean: value, valhu");
     }
 }
 
@@ -250,7 +250,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(1:2): inner.required: Required key was not found in configuration or command line arguments");
+        assert(exc.toString() == "/dev/null(2:3): inner.required: Required key was not found in configuration or command line arguments");
     }
 }
 
@@ -372,7 +372,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(2:8): config.ctor: Something went wrong... Obviously");
+        assert(exc.toString() == "/dev/null(3:9): config.ctor: Something went wrong... Obviously");
     }
 
     try
@@ -382,7 +382,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(2:14): config.fromString: Some meaningful error message");
+        assert(exc.toString() == "/dev/null(3:15): config.fromString: Some meaningful error message");
     }
 
     try
@@ -392,7 +392,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(3:4): config.validated: Bad data, try again");
+        assert(exc.toString() == "/dev/null(4:5): config.validated: Bad data, try again");
     }
 
     try
@@ -402,7 +402,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(2:13): config.converter: You shall not pass");
+        assert(exc.toString() == "/dev/null(3:14): config.converter: You shall not pass");
     }
 
     // We also need to test with arrays, to ensure they are correctly called
@@ -425,7 +425,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(1:10): configs[0].ctor: Something went wrong... Obviously");
+        assert(exc.toString() == "/dev/null(2:11): configs[0].ctor: Something went wrong... Obviously");
     }
 
     try
@@ -436,7 +436,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "/dev/null(2:16): configs[1].fromString: Some meaningful error message");
+        assert(exc.toString() == "/dev/null(3:17): configs[1].fromString: Some meaningful error message");
     }
 }
 
@@ -509,7 +509,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(0:0): chris.jay: Required key was not found in configuration or command line arguments", exc.toString());
+        assert(exc.toString() == "<unknown>(1:1): chris.jay: Required key was not found in configuration or command line arguments", exc.toString());
     }
 }
 
@@ -712,7 +712,7 @@ unittest
     - Working
 `, "/dev/null");
     catch (Exception exc)
-        assert(exc.toString() == `/dev/null(2:6): data.array[0]: Parsing failed!`);
+        assert(exc.toString() == `/dev/null(3:7): data.array[0]: Parsing failed!`);
 }
 
 /// Test for error message: Has to be versioned out, uncomment to check manually
@@ -901,7 +901,7 @@ dynamic:
   - value: 840
 `, "/dev/null");
     catch (ConfigException e)
-        assert(e.toString() == "/dev/null(0:0): static: Required key was not found in configuration or command line arguments");
+        assert(e.toString() == "/dev/null(1:1): static: Required key was not found in configuration or command line arguments");
 
     try parseConfigString!Config(`fixed:
   value: 42
@@ -913,7 +913,7 @@ dynamic:
   - value: 840
 `, "/dev/null");
     catch (ConfigException e)
-        assert(e.toString() == "/dev/null(3:2): static: Too few entries for sequence: Expected 3, got 2");
+        assert(e.toString() == "/dev/null(4:3): static: Too few entries for sequence: Expected 3, got 2");
 
     try parseConfigString!Config(`fixed:
   value: 42
@@ -927,7 +927,7 @@ dynamic:
   - value: 840
 `, "/dev/null");
     catch (ConfigException e)
-        assert(e.toString() == "/dev/null(3:2): static: Too many entries for sequence: Expected 3, got 4");
+        assert(e.toString() == "/dev/null(4:3): static: Too many entries for sequence: Expected 3, got 4");
 
     // Check that optional static array work
     static struct ConfigOpt
@@ -976,7 +976,7 @@ ds:
   disabled: MAYBE
 `, "/dev/null");
     catch (ConfigException exc)
-        assert(exc.toString() == "/dev/null(3:12): ds.disabled: Expected to be a value of type bool, but is a scalar");
+        assert(exc.toString() == "/dev/null(4:13): ds.disabled: Expected to be a value of type bool, but is a scalar");
 
     try parseConfigString!Config(`es:
   enabled: PERHAPS
@@ -984,7 +984,7 @@ ds:
   disabled: true
 `, "/dev/null");
     catch (ConfigException exc)
-        assert(exc.toString() == "/dev/null(1:11): es.enabled: Expected to be a value of type bool, but is a scalar");
+        assert(exc.toString() == "/dev/null(2:12): es.enabled: Expected to be a value of type bool, but is a scalar");
 }
 
 /// Test pointers

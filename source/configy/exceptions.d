@@ -14,9 +14,9 @@
 module configy.exceptions;
 
 import configy.utils;
+import configy.backend.node;
 
 import dyaml.exception;
-import dyaml.node;
 
 import std.algorithm : filter, map;
 import std.format;
@@ -187,7 +187,7 @@ package final class TypeConfigException : ConfigException
                  string file = __FILE__, size_t line = __LINE__)
         @safe nothrow
     {
-        this(node.nodeTypeString(), expected, path, Location.get(node),
+        this(node.type().toString(), expected, path, node.location(),
              file, line);
     }
 
@@ -233,8 +233,8 @@ package final class DurationTypeConfigException : ConfigException
     public this (Node node, string path, string file = __FILE__, size_t line = __LINE__)
         @safe nothrow
     {
-        super(path, Location.get(node), file, line);
-        this.actual = node.nodeTypeString();
+        super(path, node.location(), file, line);
+        this.actual = node.type.toString();
     }
 
     /// Format the message with or without colors
@@ -359,7 +359,7 @@ public class ArrayLengthException : ConfigException
 
     /// Constructor
     public this (size_t actual, size_t expected,
-                 string path, Location position,
+                 string path, in Location position,
                  string file = __FILE__, size_t line = __LINE__)
         @safe pure nothrow @nogc
     {
@@ -383,53 +383,5 @@ public class ArrayLengthException : ConfigException
         sink(unsignedToTempString(this.expected, buffer));
         sink(", got ");
         sink(unsignedToTempString(this.actual, buffer));
-    }
-}
-
-// Helper struct to abstract away the YAML type
-package struct Location {
-    /// File from which this `Node` originates, or `null`
-    public string file;
-    /// Line in `file` at which this `Node` is located, or `0`
-    public size_t line;
-    /// Column in `line` of `file` at which this `Node` originates, or `0`
-    public size_t column;
-
-    /// Helper function
-    package static Location get (Node n) @safe pure nothrow @nogc {
-        auto m = n.startMark();
-        return Location(m.name, m.line + 1, m.column + 1);
-    }
-
-    /// Format this `Location` into a human-readable representation
-    /// Returns: Whether something has been written to the sink.
-    public bool toString (scope SinkType sink,
-        in FormatSpec!char spec = FormatSpec!char("%s")) const scope @safe
-    {
-        import core.internal.string : unsignedToTempString;
-
-        if (!this.file.length)
-            return false;
-
-        const useColors = spec.spec == 'S';
-        char[20] buffer = void;
-
-        if (useColors) sink(Yellow);
-        sink(this.file);
-        if (useColors) sink(Reset);
-
-        if (!this.line) return true;
-        sink("(");
-        if (useColors) sink(Cyan);
-        sink(unsignedToTempString(this.line, buffer));
-        if (useColors) sink(Reset);
-        if (this.column) {
-            sink(":");
-            if (useColors) sink(Cyan);
-            sink(unsignedToTempString(this.column, buffer));
-            if (useColors) sink(Reset);
-        }
-        sink(")");
-        return true;
     }
 }

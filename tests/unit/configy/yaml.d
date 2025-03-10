@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Contains all the tests for this library.
+    Contains all the YAML parsing tests for this library.
 
     Copyright:
         Copyright (c) 2019-2022 BOSAGORA Foundation
@@ -11,14 +11,14 @@
 
 *******************************************************************************/
 
-module configy.test;
+module configy.test.yaml;
 
 import configy.attributes;
 import configy.exceptions;
 import configy.read;
 import configy.utils;
-
-import dyaml.node;
+import configy.backend.node;
+import configy.backend.yaml;
 
 import std.format;
 
@@ -509,7 +509,7 @@ unittest
     }
     catch (ConfigException exc)
     {
-        assert(exc.toString() == "<unknown>(1:1): chris.jay: Required key was not found in configuration or command line arguments", exc.toString());
+        assert(exc.toString() == "/dev/null(1:1): chris.jay: Required key was not found in configuration or command line arguments", exc.toString());
     }
 }
 
@@ -757,7 +757,7 @@ unittest
 
         public static Package fromYAML (scope ConfigParser!Package parser)
         {
-            if (parser.node.nodeID == NodeID.mapping)
+            if (parser.node.type() == parser.node.Type.Mapping)
                 return Package(null, parser.parseAs!PackageDef);
             else
                 return Package(parser.parseAs!string);
@@ -1026,10 +1026,14 @@ unittest {
         SumType!(ServiceConfig, JobConfig) conf;
 
         static Config fromYAML(scope ConfigParser!Config parser) {
-            const typeN = "type" in parser.node;
+            auto mapping = parser.node.asMapping();
+            const typeN = mapping ? "type" in mapping : null;
             // This will point to the start of the file / section
             enforce(typeN, "Missing required 'type' property");
-            const typeS = (*typeN).as!string;
+            auto scalar = typeN.asScalar();
+            enforce(scalar !is null,
+                "'type' needs to be a scalar, not a %s".format(toString(typeN.type())));
+            const typeS = scalar.str;
             if (typeS == "job") {
                 return Config(typeof(Config.conf)(parser.parseAs!JobConfig));
             } else if (typeS == "service") {

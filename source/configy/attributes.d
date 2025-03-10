@@ -260,7 +260,7 @@ public struct SetInfo (T)
 
 public struct Converter (T)
 {
-    import dyaml.node;
+    import configy.backend.node;
 
     ///
     public alias ConverterFunc = T function (Node input);
@@ -297,7 +297,7 @@ public auto converter (FT) (FT func)
 
 public interface ConfigParser (T)
 {
-    import dyaml.node;
+    import configy.backend.node;
     import configy.fieldref : StructFieldRef;
     import configy.read : Context, parseField;
 

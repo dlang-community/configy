@@ -17,11 +17,12 @@
             "debugVersions": [ "ConfigFillerDebug" ]
         },
         {
-            "name": "unittest"
+            "name": "unittest",
+            "sourceFiles": [ "tests/unit/*.d" ]
         }
     ],
 
     "dependencies": {
-	"dyaml": ">=0.8.4"
+	      "dyaml": ">=0.8.4"
     }
 }

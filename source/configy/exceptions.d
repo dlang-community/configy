@@ -103,27 +103,12 @@ public abstract class ConfigException : Exception
     public void toString (scope SinkType sink, in FormatSpec!char spec)
         const scope @safe
     {
-        import core.internal.string : unsignedToTempString;
-
-        const useColors = spec.spec == 'S';
-        char[20] buffer = void;
-
-        if (useColors) sink(Yellow);
-        sink(this.loc.file);
-        if (useColors) sink(Reset);
-
-        sink("(");
-        if (useColors) sink(Cyan);
-        sink(unsignedToTempString(this.loc.line, buffer));
-        if (useColors) sink(Reset);
-        sink(":");
-        if (useColors) sink(Cyan);
-        sink(unsignedToTempString(this.loc.column, buffer));
-        if (useColors) sink(Reset);
-        sink("): ");
+        if (this.loc.toString(sink, spec))
+            sink(": ");
 
         if (this.path.length)
         {
+            const useColors = spec.spec == 'S';
             if (useColors) sink(Yellow);
             sink(this.path);
             if (useColors) sink(Reset);
@@ -135,10 +120,7 @@ public abstract class ConfigException : Exception
         debug (ConfigFillerDebug)
         {
             sink("\n\tError originated from: ");
-            sink(this.file);
-            sink("(");
-            sink(unsignedToTempString(line, buffer));
-            sink(")");
+            Location(this.file, this.line).toString(sink);
 
             if (!this.info)
                 return;
@@ -417,5 +399,37 @@ package struct Location {
     package static Location get (Node n) @safe pure nothrow @nogc {
         auto m = n.startMark();
         return Location(m.name, m.line + 1, m.column + 1);
+    }
+
+    /// Format this `Location` into a human-readable representation
+    /// Returns: Whether something has been written to the sink.
+    public bool toString (scope SinkType sink,
+        in FormatSpec!char spec = FormatSpec!char("%s")) const scope @safe
+    {
+        import core.internal.string : unsignedToTempString;
+
+        if (!this.file.length)
+            return false;
+
+        const useColors = spec.spec == 'S';
+        char[20] buffer = void;
+
+        if (useColors) sink(Yellow);
+        sink(this.file);
+        if (useColors) sink(Reset);
+
+        if (!this.line) return true;
+        sink("(");
+        if (useColors) sink(Cyan);
+        sink(unsignedToTempString(this.line, buffer));
+        if (useColors) sink(Reset);
+        if (this.column) {
+            sink(":");
+            if (useColors) sink(Cyan);
+            sink(unsignedToTempString(this.column, buffer));
+            if (useColors) sink(Reset);
+        }
+        sink(")");
+        return true;
     }
 }

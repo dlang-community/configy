@@ -148,10 +148,10 @@ public import configy.exceptions : ConfigException;
 import configy.exceptions;
 import configy.fieldref;
 import configy.utils;
+import configy.backend.node;
 
 import dyaml.exception;
-import dyaml.node;
-import dyaml.loader;
+static import YN = dyaml.node;
 
 import std.algorithm;
 import std.conv;
@@ -385,26 +385,31 @@ private void printException (scope ConfigException exc) @trusted
 
 *******************************************************************************/
 
-public T parseConfigFile (T) (in CLIArgs cmdln, StrictMode strict = StrictMode.Error)
+public T parseConfigFile (T)
+    (in CLIArgs cmdln, StrictMode strict = StrictMode.Error)
 {
-    Node root = Loader.fromFile(cmdln.config_path).load();
+    import configy.backend.yaml;
+
+    auto root = parseFile(cmdln.config_path);
     return parseConfig!T(cmdln, root, strict);
 }
 
 /// ditto
-public T parseConfigString (T) (string data, string path, StrictMode strict = StrictMode.Error)
+public T parseConfigString (T)
+    (string data, string path, StrictMode strict = StrictMode.Error)
 {
     CLIArgs cmdln = { config_path: path };
-    return parseConfigString!T(data, cmdln, strict);
+    return parseConfigString!(T)(data, cmdln, strict);
 }
 
 /// ditto
-public T parseConfigString (T) (string data, in CLIArgs cmdln, StrictMode strict = StrictMode.Error)
+public T parseConfigString (T)
+    (string data, in CLIArgs cmdln, StrictMode strict = StrictMode.Error)
 {
+    import configy.backend.yaml;
+
     assert(cmdln.config_path.length, "No config_path provided to parseConfigString");
-    auto loader = Loader.fromString(data);
-    loader.name = cmdln.config_path;
-    Node root = loader.load();
+    auto root = parseString(data, cmdln.config_path);
     return parseConfig!T(cmdln, root, strict);
 }
 
@@ -437,20 +442,26 @@ public T parseConfig (T) (
                   "` should only be called with a `struct` type as argument, not: `" ~
                   fullyQualifiedName!T ~ "`");
 
-    final switch (node.nodeID)
+    final switch (node.type())
     {
-    case NodeID.mapping:
+    case Node.Type.Mapping:
             dbgWrite("Parsing config '%s', strict: %s",
                      fullyQualifiedName!T,
                      strict == StrictMode.Warn ?
                        strict.paint(Yellow) : strict.paintIf(!!strict, Green, Red));
             return node.parseField!(StructFieldRef!T)(
                 null, T.init, const(Context)(cmdln, strict));
-    case NodeID.sequence:
-    case NodeID.scalar:
-    case NodeID.invalid:
+    case Node.Type.Sequence:
+    case Node.Type.Scalar:
+    case Node.Type.Invalid:
         throw new TypeConfigException(node, "a mapping (object)", "document root");
     }
+}
+
+deprecated("Use the overload that accepts a `configy.backend.Node : Node`")
+public T parseConfig (T) (
+    in CLIArgs cmdln, YN.Node node, StrictMode strict = StrictMode.Error) {
+    return parseConfig!T(cmdln, nodeFactory(node), strict);
 }
 
 /*******************************************************************************
@@ -497,11 +508,11 @@ package struct Context
 *******************************************************************************/
 
 private TLFR.Type parseMapping (alias TLFR)
-    (Node node, string path, auto ref TLFR.Type defaultValue,
-     in Context ctx, in Node[string] fieldDefaults)
+    (Mapping node, string path, auto ref TLFR.Type defaultValue,
+     in Context ctx, scope Node[string] fieldDefaults)
 {
     static assert(is(TLFR.Type == struct), "`parseMapping` called with wrong type (should be a `struct`)");
-    assert(node.nodeID == NodeID.mapping, "Internal error: parseMapping shouldn't have been called");
+    assert(node.type() == Node.Type.Mapping, "Internal error: parseMapping shouldn't have been called");
 
     dbgWrite("%s: `parseMapping` called for '%s' (node entries: %s)",
              TLFR.Type.stringof.paint(Cyan), path.paint(Cyan),
@@ -522,19 +533,20 @@ private TLFR.Type parseMapping (alias TLFR)
         /// First, check that all the sections found in the mapping are present in the type
         /// If not, the user might have made a typo.
         immutable string[] fieldNames = [ FieldsName!(TLFR.Type) ];
-        foreach (const ref Node key, const ref Node value; node)
+        foreach (scope Node key, scope Node value; node)
         {
-            if (!fieldNames.canFind(key.as!string))
+            scope str = key.parseScalar!string(path);
+            if (!fieldNames.canFind(str))
             {
                 if (ctx.strict == StrictMode.Warn)
                 {
                     scope exc = new UnknownKeyConfigException(
-                        path, key.as!string, fieldNames, Location.get(key));
+                        path, str, fieldNames, key.location());
                     exc.printException();
                 }
                 else
                     throw new UnknownKeyConfigException(
-                        path, key.as!string, fieldNames, Location.get(key));
+                        path, str, fieldNames, key.location());
             }
         }
     }
@@ -578,18 +590,18 @@ private TLFR.Type parseMapping (alias TLFR)
 
             if (ctx.strict && FR.FieldName in node)
                 throw new ConfigExceptionImpl("'Key' field is specified twice",
-                    path.addPath(FR.FieldName), Location.get(node));
+                    path.addPath(FR.FieldName), node.location());
             return (*ptr).parseField!(FR)(path.addPath(FR.FieldName), default_, ctx)
                 .dbgWriteRet("Using value '%s' from fieldDefaults for field '%s'",
                              FR.FieldName.paint(Cyan));
         }
 
-        if (auto ptr = FR.Name in node)
+        if (auto value = FR.Name in node)
         {
             dbgWrite("%s: YAML field is %s in node%s",
                      FR.Name.paint(Cyan), "present".paint(Green),
                      (FR.Name == FR.FieldName ? "" : " (note that field name is overriden)").paint(Yellow));
-            return (*ptr).parseField!(FR)(path.addPath(FR.Name), default_, ctx)
+            return value.parseField!(FR)(path.addPath(FR.Name), default_, ctx)
                 .dbgWriteRet("Using value '%s' from YAML document for field '%s'",
                              FR.FieldName.paint(Cyan));
         }
@@ -616,11 +628,11 @@ private TLFR.Type parseMapping (alias TLFR)
         else static if (mightBeOptional!FR)
         {
             const npath = path.addPath(FR.Name);
-            string[string] aa;
-            return Node(aa).parseMapping!(FR)(npath, default_, ctx, null);
+            scope emptyNode = new EmptyNode(node.location());
+            return emptyNode.parseMapping!(FR)(npath, default_, ctx, null);
         }
         else
-            throw new MissingKeyException(path.addPath(FR.Name), Location.get(node));
+            throw new MissingKeyException(path.addPath(FR.Name), node.location());
     }
 
     FR.Type convert (alias FR) ()
@@ -660,7 +672,7 @@ private TLFR.Type parseMapping (alias TLFR)
             {
                 dbgWrite("%s: Calling `%s` method",
                      TLFR.Type.stringof.paint(Cyan), "validate()".paint(Green));
-                wrapConstruct(result.validate(), path, Location.get(node));
+                wrapConstruct(result.validate(), path, node.location());
             }
             else
             {
@@ -687,7 +699,7 @@ private TLFR.Type parseMapping (alias TLFR)
 /*******************************************************************************
 
     Parse a field, trying to match up the compile-time expectation with
-    the run time value of the Node (`nodeID`).
+    the run time value of the Node (`Node.Type`).
 
     This is the central point which does "type conversion", from the YAML node
     to the field type. Whenever adding support for a new type, things should
@@ -705,7 +717,7 @@ private TLFR.Type parseMapping (alias TLFR)
 package FR.Type parseField (alias FR)
     (Node node, string path, auto ref FR.Type defaultValue, in Context ctx)
 {
-    if (node.nodeID == NodeID.invalid)
+    if (node.type() == Node.Type.Invalid)
         throw new TypeConfigException(node, "valid", path);
 
     // If we reached this, it means the field is set, so just recurse
@@ -716,33 +728,33 @@ package FR.Type parseField (alias FR)
             true);
 
     else static if (hasConverter!(FR.Ref))
-        return wrapConstruct(node.viaConverter!(FR), path, Location.get(node));
+        return wrapConstruct(node.viaConverter!(FR), path, node.location());
 
     else static if (hasFromYAML!(FR.Type))
     {
         scope impl = new ConfigParserImpl!(FR.Type)(node, path, ctx);
-        return wrapConstruct(FR.Type.fromYAML(impl), path, Location.get(node));
+        return wrapConstruct(FR.Type.fromYAML(impl), path, node.location());
     }
 
     else static if (hasFromString!(FR.Type))
-        return wrapConstruct(FR.Type.fromString(node.as!string), path, Location.get(node));
+        return wrapConstruct(FR.Type.fromString(node.parseScalar!(string)(path)), path, node.location());
 
     else static if (hasStringCtor!(FR.Type))
-        return wrapConstruct(FR.Type(node.as!string), path, Location.get(node));
+        return wrapConstruct(FR.Type(node.parseScalar!(string)(path)), path, node.location());
 
     else static if (is(immutable(FR.Type) == immutable(core.time.Duration)))
     {
-        if (node.nodeID != NodeID.mapping)
-            throw new DurationTypeConfigException(node, path);
-        return node.parseMapping!(StructFieldRef!DurationMapping)(
-            path, DurationMapping.make(defaultValue), ctx, null).opCast!Duration;
+        if (scope mapping = node.asMapping())
+            return mapping.parseMapping!(StructFieldRef!DurationMapping)(
+                path, DurationMapping.make(defaultValue), ctx, null).opCast!Duration;
+        throw new DurationTypeConfigException(node, path);
     }
 
     else static if (is(FR.Type == struct))
     {
-        if (node.nodeID != NodeID.mapping)
-            throw new TypeConfigException(node, "a mapping (object)", path);
-        return node.parseMapping!(FR)(path, defaultValue, ctx, null);
+        if (auto mapping = node.asMapping())
+            return mapping.parseMapping!(FR)(path, defaultValue, ctx, null);
+        throw new TypeConfigException(node, "a mapping (object)", path);
     }
 
     // Handle string early as they match the sequence rule too
@@ -757,25 +769,26 @@ package FR.Type parseField (alias FR)
 
     else static if (is(FR.Type : E[K], E, K))
     {
-        if (node.nodeID != NodeID.mapping)
+        scope mapping = node.asMapping();
+        if (mapping is null)
             throw new TypeConfigException(node, "a mapping (associative array)", path);
 
         // Note: As of June 2022 (DMD v2.100.0), associative arrays cannot
         // have initializers, hence their UX for config is less optimal.
-        return node.mapping().map!(
-                (Node.Pair pair) {
-                    return tuple(
-                        pair.key.get!K,
-                        pair.value.parseField!(NestedFieldRef!(E, FR))(
-                            format("%s[%s]", path, pair.key.as!string), E.init, ctx));
-                }).assocArray();
-
+        FR.Type result;
+        foreach (scope Node key, scope Node value; mapping) {
+            scope ks = key.parseScalar!(K)(path);
+            result[ks] = value.parseField!(NestedFieldRef!(E, FR))(
+                format("%s[%s]", path, ks), E.init, ctx);
+        }
+        return result;
     }
     else static if (is(FR.Type : E[], E))
     {
         static if (hasUDA!(FR.Ref, Key))
         {
-            if (node.nodeID != NodeID.mapping)
+            scope mapping = node.asMapping();
+            if (mapping is null)
                 throw new TypeConfigException(node, "mapping (object)", path);
 
             static assert(getUDAs!(FR.Ref, Key).length == 1,
@@ -787,22 +800,25 @@ package FR.Type parseField (alias FR)
                           fullyQualifiedName!E ~ "`, not a sequence of `struct`");
 
             string key = getUDAs!(FR.Ref, Key)[0].name;
-            return node.mapping().map!(
-                (Node.Pair pair) {
-                    if (pair.value.nodeID != NodeID.mapping)
-                        throw new TypeConfigException(
-                            "sequence of " ~ pair.value.nodeTypeString(),
-                            "sequence of mapping (array of objects)",
-                            path, Location.get(node));
-
-                    return pair.value.parseMapping!(StructFieldRef!E)(
-                        path.addPath(pair.key.as!string),
-                        E.init, ctx, key.length ? [ key: pair.key ] : null);
-                }).array();
+            E[] result;
+            foreach (scope Node k, scope Node value; mapping) {
+                if (scope vmap = value.asMapping()) {
+                    result ~= vmap.parseMapping!(StructFieldRef!E)(
+                        path.addPath(k.parseScalar!string(path)),
+                        E.init, ctx, key.length ? [ key: k ] : null);
+                }
+                else
+                    throw new TypeConfigException(
+                        "sequence of " ~ value.type().toString(),
+                        "sequence of mapping (array of objects)",
+                        path, node.location());
+            }
+            return result;
         }
         else
         {
-            if (node.nodeID != NodeID.sequence)
+            scope seq = node.asSequence();
+            if (seq is null)
                 throw new TypeConfigException(node, "sequence (array)", path);
 
             typeof(return) validateLength (E[] res)
@@ -811,7 +827,7 @@ package FR.Type parseField (alias FR)
                 {
                     if (res.length != k)
                         throw new ArrayLengthException(
-                            res.length, k, path, Location.get(node));
+                            res.length, k, path, node.location());
                     return res[0 .. k];
                 }
                 else
@@ -821,12 +837,11 @@ package FR.Type parseField (alias FR)
             // We pass `E.init` as default value as it is not going to be used:
             // Either there is something in the YAML document, and that will be
             // converted, or `sequence` will not iterate.
-            return validateLength(
-                node.sequence.enumerate.map!(
-                kv => kv.value.parseField!(NestedFieldRef!(E, FR))(
-                    format("%s[%s]", path, kv.index), E.init, ctx))
-                .array()
-            );
+            E[] result;
+            foreach (size_t idx, scope Node value; seq)
+                result ~= value.parseField!(NestedFieldRef!(E, FR))(
+                    format("%s[%s]", path, idx), E.init, ctx);
+            return validateLength(result);
         }
     }
     else static if (is(FR.Type == T*, T))
@@ -847,17 +862,12 @@ package FR.Type parseField (alias FR)
 /// Parse a node as a scalar
 private T parseScalar (T) (Node node, lazy string path)
 {
-    if (node.nodeID != NodeID.scalar)
-        throw new TypeConfigException(node, "a value of type " ~ T.stringof, path);
+    try
+        if (scope scalar = node.asScalar())
+            return scalar.str.to!(T);
+    catch (Exception exc) {}
 
-    try {
-        static if (is(T == enum))
-            return node.as!string.to!(T);
-        else
-            return node.as!(T);
-    } catch (Exception exc) {
-        throw new TypeConfigException(node, "a value of type " ~ T.stringof, path);
-    }
+    throw new TypeConfigException(node, "a value of type " ~ T.stringof, path);
 }
 
 /*******************************************************************************
@@ -872,7 +882,7 @@ private T parseScalar (T) (Node node, lazy string path)
     Params:
       exp = The expression that may throw
       path = Path within the config file of the field
-      position = Position of the node in the YAML file
+      position = Position of the node
       file = Call site file (otherwise the message would point to this function)
       line = Call site line (see `file` reasoning)
 
@@ -881,7 +891,7 @@ private T parseScalar (T) (Node node, lazy string path)
 
 *******************************************************************************/
 
-private T wrapConstruct (T) (lazy T exp, string path, Location position,
+private T wrapConstruct (T) (lazy T exp, string path, in Location position,
     string file = __FILE__, size_t line = __LINE__)
 {
     try
@@ -1008,7 +1018,7 @@ private template NameIs (string searching)
 
 /// Returns whether or not the field has a `enabled` / `disabled` field,
 /// and its value. If it does not, returns `true`.
-private EnabledState isMappingEnabled (M) (Node node, string path, auto ref M default_)
+private EnabledState isMappingEnabled (M) (Mapping node, string path, auto ref M default_)
 {
     import std.meta : Filter;
 
@@ -1021,14 +1031,14 @@ private EnabledState isMappingEnabled (M) (Node node, string path, auto ref M de
                        "`enabled` field `" ~ EMT[0].FieldName ~
                        "` conflicts with `disabled` field `" ~ DMT[0].FieldName ~ "`");
 
-        if (auto ptr = "enabled" in node)
-            return EnabledState(EnabledState.Field.Enabled, (*ptr).parseScalar!(bool)(path.addPath("enabled")));
+        if (auto n = "enabled" in node)
+            return EnabledState(EnabledState.Field.Enabled, n.parseScalar!(bool)(path.addPath("enabled")));
         return EnabledState(EnabledState.Field.Enabled, __traits(getMember, default_, EMT[0].FieldName));
     }
     else static if (DMT.length)
     {
-        if (auto ptr = "disabled" in node)
-            return EnabledState(EnabledState.Field.Disabled, (*ptr).parseScalar!(bool)(path.addPath("disabled")));
+        if (auto n = "disabled" in node)
+            return EnabledState(EnabledState.Field.Disabled, n.parseScalar!(bool)(path.addPath("disabled")));
         return EnabledState(EnabledState.Field.Disabled, __traits(getMember, default_, DMT[0].FieldName));
     }
     else
@@ -1104,4 +1114,33 @@ unittest
 
     static assert(!hasFieldWiseCtor!(StructFieldRef!PubKey));
     static assert( hasStringCtor!PubKey);
+}
+
+/// An empty node, used as placeholder in some cases
+private final class EmptyNode : Mapping {
+    ///
+    protected Location location_;
+
+    ///
+    public this (Location loc) scope @safe pure nothrow @nogc {
+        this.location_ = loc;
+    }
+
+    public override inout(Mapping)  asMapping () inout scope @safe  { return this; }
+    public override inout(configy.backend.node.Sequence) asSequence () inout scope @safe { return null; }
+    public override inout(Scalar)   asScalar () inout scope @safe   { return null; }
+
+    ///
+    public override Type type () const scope @safe nothrow { return Type.Mapping; }
+
+    public override Location location () const scope @safe nothrow { return this.location_; }
+
+    ///
+    public override size_t length () const scope @safe { return 0; }
+
+    ///
+    public override int opApply (scope MapIterator dg) scope { return 0; }
+
+    ///
+    public override inout(Node) lookup (string key) inout scope return @safe { return null; }
 }

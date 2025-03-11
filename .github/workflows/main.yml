@@ -70,6 +70,15 @@ jobs:
       shell: bash
       run: dub test --compiler=$DC -b unittest-cov -c unittest
 
+    - name: 'Build examples'
+      shell: bash
+      run: |
+          for example in examples/*/; do
+            pushd $example
+            dub build
+            popd
+          done
+
     - name: 'Upload code coverage'
       uses: codecov/codecov-action@v4
       with:

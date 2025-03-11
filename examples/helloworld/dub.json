@@ -1,6 +1,6 @@
 {
     "name": "helloworld",
     "dependencies": {
-        "config": { "path": "../../", "version": "*" }
+        "configy": { "path": "../../", "version": "*" }
     }
 }

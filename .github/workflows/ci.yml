@@ -47,39 +47,39 @@ jobs:
     timeout-minutes: 60
     steps:
 
-    # Checkout this repository and its submodules
-    - uses: actions/checkout@v4
-      with:
-        # For codecov
-        fetch-depth: 2
+      # Checkout this repository and its submodules
+      - uses: actions/checkout@v4
+        with:
+          # For codecov
+          fetch-depth: 2
 
-    # Install the D compiler
-    - name: Prepare compiler
-      uses: dlang-community/setup-dlang@v1
-      with:
+      # Install the D compiler
+      - name: Prepare compiler
+        uses: dlang-community/setup-dlang@v1
+        with:
           compiler: ${{ matrix.dc }}
 
-    # Add whatever debugging information can be useful in the long run here
-    - name: Print system information
-      shell: bash
-      run: |
-        ${DC} --version
-        dub --version
+      # Add whatever debugging information can be useful in the long run here
+      - name: Print system information
+        shell: bash
+        run: |
+          ${DC} --version
+          dub --version
 
-    - name: 'Run unittests'
-      shell: bash
-      run: dub test --compiler=$DC -b unittest-cov -c unittest
+      - name: 'Run unittests'
+        shell: bash
+        run: dub test --compiler=$DC -b unittest-cov -c unittest
 
-    - name: 'Build examples'
-      shell: bash
-      run: |
+      - name: 'Build examples'
+        shell: bash
+        run: |
           for example in examples/*/; do
             pushd $example
             dub build
             popd
           done
 
-    - name: 'Upload code coverage'
-      uses: codecov/codecov-action@v4
-      with:
-        flags: unittests
+      - name: 'Upload code coverage'
+        uses: codecov/codecov-action@v4
+        with:
+          flags: unittests

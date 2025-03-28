@@ -1027,7 +1027,7 @@ unittest {
 
         static Config fromYAML(scope ConfigParser!Config parser) {
             auto mapping = parser.node.asMapping();
-            const typeN = mapping ? "type" in mapping : null;
+            const typeN = mapping ? mapping.lookup("type") : null;
             // This will point to the start of the file / section
             enforce(typeN, "Missing required 'type' property");
             auto scalar = typeN.asScalar();

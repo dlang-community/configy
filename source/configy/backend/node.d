@@ -66,11 +66,6 @@ public interface Mapping : Node {
     /// Iterates over this object, passing each entry to the `dg`
     public int opApply (scope MapIterator dg) scope;
 
-    /// Returns: a `Node` if `key` is present in `this`, `null` otherwise
-    public inout(Node) opBinaryRight(string op : "in")(string key) inout scope return @safe {
-        return this.lookup(key);
-    }
-
     /// Ditto
     public inout(Node) lookup (string key) inout scope return @safe;
 }

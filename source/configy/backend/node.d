@@ -58,13 +58,13 @@ public interface Node {
 public interface Mapping : Node {
     /// The delegate type to iterate over a mapping
     public alias MapIterator = int delegate(
-        scope Node key, scope Node value) @system;
+        scope Node key, scope Node value) @safe;
 
     /// Returns: The length of this object (the number of entries in it)
     public size_t length () const scope @safe;
 
     /// Iterates over this object, passing each entry to the `dg`
-    public int opApply (scope MapIterator dg) scope;
+    public int opApply (scope MapIterator dg) scope @safe;
 
     /// Ditto
     public inout(Node) lookup (string key) inout scope return @safe;

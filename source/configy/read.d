@@ -588,7 +588,7 @@ private TLFR.Type parseMapping (alias TLFR)
             dbgWrite("Found %s (%s.%s) in `fieldDefaults`",
                      FR.Name.paint(Cyan), path.paint(Cyan), FR.FieldName.paint(Cyan));
 
-            if (ctx.strict && FR.FieldName in node)
+            if (ctx.strict && node.lookup(FR.FieldName))
                 throw new ConfigExceptionImpl("'Key' field is specified twice",
                     path.addPath(FR.FieldName), node.location());
             return (*ptr).parseField!(FR)(path.addPath(FR.FieldName), default_, ctx)
@@ -596,7 +596,7 @@ private TLFR.Type parseMapping (alias TLFR)
                              FR.FieldName.paint(Cyan));
         }
 
-        if (auto value = FR.Name in node)
+        if (auto value = node.lookup(FR.Name))
         {
             dbgWrite("%s: YAML field is %s in node%s",
                      FR.Name.paint(Cyan), "present".paint(Green),
@@ -1031,13 +1031,13 @@ private EnabledState isMappingEnabled (M) (Mapping node, string path, auto ref M
                        "`enabled` field `" ~ EMT[0].FieldName ~
                        "` conflicts with `disabled` field `" ~ DMT[0].FieldName ~ "`");
 
-        if (auto n = "enabled" in node)
+        if (auto n = node.lookup("enabled"))
             return EnabledState(EnabledState.Field.Enabled, n.parseScalar!(bool)(path.addPath("enabled")));
         return EnabledState(EnabledState.Field.Enabled, __traits(getMember, default_, EMT[0].FieldName));
     }
     else static if (DMT.length)
     {
-        if (auto n = "disabled" in node)
+        if (auto n = node.lookup("disabled"))
             return EnabledState(EnabledState.Field.Disabled, n.parseScalar!(bool)(path.addPath("disabled")));
         return EnabledState(EnabledState.Field.Disabled, __traits(getMember, default_, DMT[0].FieldName));
     }

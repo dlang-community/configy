@@ -365,7 +365,7 @@ public struct Only (string[] Values) {
 ///
 unittest {
     import configy.attributes : Only, Optional;
-    import configy.read : parseConfigString;
+    import configy.easy : parseConfigString;
 
     static struct CountryConfig {
         Only!(["France", "Malta", "South Korea"]) country;

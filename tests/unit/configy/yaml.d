@@ -812,8 +812,7 @@ unittest
         static Config fromYAML (scope ConfigParser!Config parser)
         {
             static struct OnlyVersion { uint fileVersion; }
-            auto vers = parseConfig!OnlyVersion(
-                CLIArgs.init, parser.node, StrictMode.Ignore);
+            auto vers = parseConfig!OnlyVersion(parser.node, StrictMode.Ignore);
             switch (vers.fileVersion) {
             case 1:
                 return Config(1, parser.parseAs!Version1);

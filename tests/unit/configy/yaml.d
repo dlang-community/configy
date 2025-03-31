@@ -1027,22 +1027,23 @@ unittest {
 
         static Config fromYAML(scope ConfigParser!Config parser) {
             auto mapping = parser.node.asMapping();
-            const typeN = mapping ? mapping.lookup("type") : null;
-            // This will point to the start of the file / section
-            enforce(typeN, "Missing required 'type' property");
-            auto scalar = typeN.asScalar();
-            enforce(scalar !is null,
-                "'type' needs to be a scalar, not a %s".format(toString(typeN.type())));
-            const typeS = scalar.str;
-            if (typeS == "job") {
-                return Config(typeof(Config.conf)(parser.parseAs!JobConfig));
-            } else if (typeS == "service") {
-                return Config(typeof(Config.conf)(parser.parseAs!ServiceConfig));
-            } else {
-                throw new Exception(
-                    "'%s' is not a valid value for 'type', expected one of: 'service', 'job'"
-                    .format(typeS));
-            }
+            return mapping.withNode("type", (scope Node key, scope Node typeN) {
+                // This will point to the start of the file / section
+                enforce(typeN, "Missing required 'type' property");
+                auto scalar = typeN.asScalar();
+                enforce(scalar !is null,
+                    "'type' needs to be a scalar, not a %s".format(toString(typeN.type())));
+                const typeS = scalar.str;
+                if (typeS == "job") {
+                    return Config(typeof(Config.conf)(parser.parseAs!JobConfig));
+                } else if (typeS == "service") {
+                    return Config(typeof(Config.conf)(parser.parseAs!ServiceConfig));
+                } else {
+                    throw new Exception(
+                        "'%s' is not a valid value for 'type', expected one of: 'service', 'job'"
+                        .format(typeS));
+                }
+            });
         }
     }
 

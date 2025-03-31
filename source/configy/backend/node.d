@@ -168,9 +168,24 @@ public bool isScalarValue (scope const Scalar node, scope const char[] value) @s
 
 
 /// Convenience function to find a specific key in a mapping
-public Node lookup (Mapping map, string key) {
+public RT withNode (DGT : RT delegate(scope Node, scope Node), RT)
+    (scope Mapping map, string key, scope DGT dg) {
     foreach (scope k, scope v; map)
         if (k.isScalarValue(key))
-            return v;
-    return null;
+            return dg(k, v);
+    return dg(null, null);
+}
+
+/// Ditto
+public RT withNode (DGT : RT function(scope Node, scope Node), RT)
+    (scope Mapping map, string key, scope DGT dg) {
+    foreach (scope k, scope v; map)
+        if (k.isScalarValue(key))
+            return dg(k, v);
+    return dg(null, null);
+}
+
+/// Ditto
+public bool has (scope Mapping map, string key) {
+    return map.withNode(key, (scope Node key, scope Node value) => value !is null);
 }

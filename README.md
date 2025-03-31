@@ -21,7 +21,7 @@ Let's start with an hello world:
 ```D
 module helloworld;
 
-import configy.read;
+import configy.easy;
 
 import std.stdio;
 import std.typecons;

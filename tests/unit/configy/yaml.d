@@ -14,8 +14,8 @@
 module configy.test.yaml;
 
 import configy.attributes;
+import configy.easy;
 import configy.exceptions;
-import configy.read;
 import configy.utils;
 import configy.backend.node;
 import configy.backend.yaml;

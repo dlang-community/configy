@@ -391,7 +391,7 @@ public T parseConfigFile (T)
     import configy.backend.yaml;
 
     auto root = parseFile(cmdln.config_path);
-    return parseConfig!T(cmdln, root, strict);
+    return parseConfig!T(root, strict);
 }
 
 /// ditto
@@ -410,7 +410,7 @@ public T parseConfigString (T)
 
     assert(cmdln.config_path.length, "No config_path provided to parseConfigString");
     auto root = parseString(data, cmdln.config_path);
-    return parseConfig!T(cmdln, root, strict);
+    return parseConfig!T(root, strict);
 }
 
 /*******************************************************************************
@@ -422,7 +422,7 @@ public T parseConfigString (T)
 
     Params:
       T = Type of the config struct to fill
-      cmdln = Command line arguments
+      cmdln = Command line arguments (deprecated)
       node = The root node matching `T`
       strict = Action to take when encountering unknown keys in the document
 
@@ -435,8 +435,15 @@ public T parseConfigString (T)
 
 *******************************************************************************/
 
+deprecated("Use the overload that doesn't use `CLIArgs` as first argument")
 public T parseConfig (T) (
     in CLIArgs cmdln, Node node, StrictMode strict = StrictMode.Error)
+{
+    return parseConfig!T(node, strict);
+}
+
+/// Ditto
+public T parseConfig (T) (Node node, StrictMode strict = StrictMode.Error)
 {
     static assert(is(T == struct), "`" ~ __FUNCTION__ ~
                   "` should only be called with a `struct` type as argument, not: `" ~
@@ -450,7 +457,7 @@ public T parseConfig (T) (
                      strict == StrictMode.Warn ?
                        strict.paint(Yellow) : strict.paintIf(!!strict, Green, Red));
             return node.parseField!(StructFieldRef!T)(
-                null, T.init, const(Context)(cmdln, strict));
+                null, T.init, const(Context)(strict));
     case Node.Type.Sequence:
     case Node.Type.Scalar:
     case Node.Type.Invalid:
@@ -461,7 +468,7 @@ public T parseConfig (T) (
 deprecated("Use the overload that accepts a `configy.backend.Node : Node`")
 public T parseConfig (T) (
     in CLIArgs cmdln, YN.Node node, StrictMode strict = StrictMode.Error) {
-    return parseConfig!T(cmdln, nodeFactory(node), strict);
+    return parseConfig!T(nodeFactory(node), strict);
 }
 
 /*******************************************************************************
@@ -484,9 +491,6 @@ public enum StrictMode
 /// Used to pass around configuration
 package struct Context
 {
-    ///
-    private CLIArgs cmdln;
-
     ///
     private StrictMode strict;
 }

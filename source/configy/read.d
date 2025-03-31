@@ -1140,7 +1140,4 @@ private final class EmptyNode : Mapping {
 
     ///
     public override int opApply (scope MapIterator dg) scope { return 0; }
-
-    ///
-    public override inout(Node) lookup (string key) inout scope return @safe { return null; }
 }

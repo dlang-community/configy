@@ -65,9 +65,6 @@ public interface Mapping : Node {
 
     /// Iterates over this object, passing each entry to the `dg`
     public int opApply (scope MapIterator dg) scope;
-
-    /// Ditto
-    public inout(Node) lookup (string key) inout scope return @safe;
 }
 
 /// Represent a sequence / array in a document
@@ -155,4 +152,25 @@ public string toString (Node.Type type) @safe pure nothrow @nogc {
         case Node.Type.Invalid:
             return "invalid";
     }
+}
+
+/// Convenience function to compare a node to a specific scalar
+public bool isScalarValue (scope const Node node, scope const char[] value) @safe {
+    if (auto sc = node.asScalar())
+        return sc.isScalarValue(value);
+    return false;
+}
+
+/// Ditto
+public bool isScalarValue (scope const Scalar node, scope const char[] value) @safe {
+    return node.str() == value;
+}
+
+
+/// Convenience function to find a specific key in a mapping
+public Node lookup (Mapping map, string key) {
+    foreach (scope k, scope v; map)
+        if (k.isScalarValue(key))
+            return v;
+    return null;
 }

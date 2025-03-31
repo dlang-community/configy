@@ -125,13 +125,6 @@ public final class YAMLMapping : YAMLNode, Mapping {
         }
         return 0;
     }
-
-    ///
-    public override inout(Node) lookup (string key) inout scope return @safe {
-        scope r = key in this.n;
-        if (r is null) return null;
-        return nodeFactory(*r);
-    }
 }
 
 

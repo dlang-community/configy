@@ -588,7 +588,7 @@ private TLFR.Type parseMapping (alias TLFR)
             dbgWrite("Found %s (%s.%s) in `fieldDefaults`",
                      FR.Name.paint(Cyan), path.paint(Cyan), FR.FieldName.paint(Cyan));
 
-            if (ctx.strict && node.lookup(FR.FieldName))
+            if (ctx.strict && node.has(FR.FieldName))
                 throw new ConfigExceptionImpl("'Key' field is specified twice",
                     path.addPath(FR.FieldName), node.location());
             return (*ptr).parseField!(FR)(path.addPath(FR.FieldName), default_, ctx)
@@ -596,43 +596,45 @@ private TLFR.Type parseMapping (alias TLFR)
                              FR.FieldName.paint(Cyan));
         }
 
-        if (auto value = node.lookup(FR.Name))
-        {
-            dbgWrite("%s: YAML field is %s in node%s",
-                     FR.Name.paint(Cyan), "present".paint(Green),
-                     (FR.Name == FR.FieldName ? "" : " (note that field name is overriden)").paint(Yellow));
-            return value.parseField!(FR)(path.addPath(FR.Name), default_, ctx)
-                .dbgWriteRet("Using value '%s' from YAML document for field '%s'",
-                             FR.FieldName.paint(Cyan));
-        }
+        return node.withNode(FR.Name, (scope Node key, scope Node value) {
+            if (value !is null)
+            {
+                dbgWrite("%s: YAML field is %s in node%s",
+                    FR.Name.paint(Cyan), "present".paint(Green),
+                    (FR.Name == FR.FieldName ? "" : " (note that field name is overriden)").paint(Yellow));
+                return value.parseField!(FR)(path.addPath(FR.Name), default_, ctx)
+                    .dbgWriteRet("Using value '%s' from YAML document for field '%s'",
+                        FR.FieldName.paint(Cyan));
+            }
 
-        dbgWrite("%s: Field is %s from node%s",
-                 FR.Name.paint(Cyan), "missing".paint(Red),
-                 (FR.Name == FR.FieldName ? "" : " (note that field name is overriden)").paint(Yellow));
+            dbgWrite("%s: Field is %s from node%s",
+                FR.Name.paint(Cyan), "missing".paint(Red),
+                (FR.Name == FR.FieldName ? "" : " (note that field name is overriden)").paint(Yellow));
 
-        // A field is considered optional if it has an initializer that is different
-        // from its default value, or if it has the `Optional` UDA.
-        // In that case, just return this value.
-        static if (FR.Optional)
-            return default_
-                .dbgWriteRet("Using default value '%s' for optional field '%s'", FR.FieldName.paint(Cyan));
+            // A field is considered optional if it has an initializer that is different
+            // from its default value, or if it has the `Optional` UDA.
+            // In that case, just return this value.
+            static if (FR.Optional)
+                return default_
+                    .dbgWriteRet("Using default value '%s' for optional field '%s'", FR.FieldName.paint(Cyan));
 
-        // The field is not present, but it could be because it is an optional section.
-        // For example, the section could be defined as:
-        // ---
-        // struct RequestLimit { size_t reqs = 100; }
-        // struct Config { RequestLimit limits; }
-        // ---
-        // In this case we need to recurse into `RequestLimit` to check if any
-        // of its field is required.
-        else static if (mightBeOptional!FR)
-        {
-            const npath = path.addPath(FR.Name);
-            scope emptyNode = new EmptyNode(node.location());
-            return emptyNode.parseMapping!(FR)(npath, default_, ctx, null);
-        }
-        else
-            throw new MissingKeyException(path.addPath(FR.Name), node.location());
+            // The field is not present, but it could be because it is an optional section.
+            // For example, the section could be defined as:
+            // ---
+            // struct RequestLimit { size_t reqs = 100; }
+            // struct Config { RequestLimit limits; }
+            // ---
+            // In this case we need to recurse into `RequestLimit` to check if any
+            // of its field is required.
+            else static if (mightBeOptional!FR)
+            {
+                const npath = path.addPath(FR.Name);
+                scope emptyNode = new EmptyNode(node.location());
+                return emptyNode.parseMapping!(FR)(npath, default_, ctx, null);
+            }
+            else
+                throw new MissingKeyException(path.addPath(FR.Name), node.location());
+        });
     }
 
     FR.Type convert (alias FR) ()
@@ -1031,15 +1033,19 @@ private EnabledState isMappingEnabled (M) (Mapping node, string path, auto ref M
                        "`enabled` field `" ~ EMT[0].FieldName ~
                        "` conflicts with `disabled` field `" ~ DMT[0].FieldName ~ "`");
 
-        if (auto n = node.lookup("enabled"))
-            return EnabledState(EnabledState.Field.Enabled, n.parseScalar!(bool)(path.addPath("enabled")));
-        return EnabledState(EnabledState.Field.Enabled, __traits(getMember, default_, EMT[0].FieldName));
+        return node.withNode("enabled", (scope Node key, scope Node value) {
+            if (value !is null)
+                return EnabledState(EnabledState.Field.Enabled, value.parseScalar!(bool)(path.addPath("enabled")));
+            return EnabledState(EnabledState.Field.Enabled, __traits(getMember, default_, EMT[0].FieldName));
+        });
     }
     else static if (DMT.length)
     {
-        if (auto n = node.lookup("disabled"))
-            return EnabledState(EnabledState.Field.Disabled, n.parseScalar!(bool)(path.addPath("disabled")));
-        return EnabledState(EnabledState.Field.Disabled, __traits(getMember, default_, DMT[0].FieldName));
+        return node.withNode("disabled", (scope Node key, scope Node value) {
+            if (value !is null)
+                return EnabledState(EnabledState.Field.Disabled, value.parseScalar!(bool)(path.addPath("disabled")));
+            return EnabledState(EnabledState.Field.Disabled, __traits(getMember, default_, DMT[0].FieldName));
+        });
     }
     else
     {

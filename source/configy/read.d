@@ -1,13 +1,14 @@
 /*******************************************************************************
 
     Utilities to fill a struct representing the configuration with the content
-    of a YAML document.
+    of a document.
 
-    The main function of this module is `parseConfig`. Convenience functions
-    `parseConfigString` and `parseConfigFile` are also available.
+    The main function of this module is `parseConfig`. Higher-level wrappers
+    such as `parseConfigString` and `parseConfigFile` are also available in
+    `configy.easy`.
 
     The type parameter to those three functions must be a struct and is used
-    to drive the processing of the YAML node. When an error is encountered,
+    to drive the processing of the mapping. When an error is encountered,
     an `Exception` will be thrown, with a descriptive message.
     The rules by which the struct is filled are designed to be
     as intuitive as possible, and are described below.
@@ -63,7 +64,7 @@
     Duration_parsing:
       If the config field is of type `core.time.Duration`, special parsing rules
       will apply. There are two possible forms in which a Duration field may
-      be expressed. In the first form, the YAML node should be a mapping,
+      be expressed. In the first form, the node should be a mapping,
       and it will be checked for fields matching the supported units
       in `core.time`: `weeks`, `days`, `hours`, `minutes`, `seconds`, `msecs`,
       `usecs`, `hnsecs`, `nsecs`. Strict parsing option will be respected.
@@ -88,7 +89,7 @@
       underscore ('_'), followed by a unit name as defined in `core.time`.
       This can be either the field name directly, or a name override.
       The latter is recommended to avoid confusion when using the field in code.
-      In this form, the YAML node is expected to be a scalar.
+      In this form, the node is expected to be a scalar.
       So the previous example, using this form, would be expressed as:
       ---
       sleepFor_minutes: 510
@@ -107,8 +108,8 @@
 
     Strict_Parsing:
       When strict parsing is enabled, the config filler will also validate
-      that the YAML nodes do not contains entry which are not present in the
-      mapping (struct) being processed.
+      that the mappings do not contains entry which are not present in the
+      struct being processed.
       This can be useful to catch typos or outdated configuration options.
 
     Post_Validation:
@@ -202,7 +203,7 @@ public Nullable!T wrapException (T) (lazy T parseCall)
     }
     catch (Exception exc)
     {
-        // Other Exception type may be thrown by D-YAML,
+        // Other Exception type may be thrown by the underlying libraries.
         // they won't include rich information.
         stderr.writeln(exc.message());
         return typeof(return).init;
@@ -235,8 +236,8 @@ private void printException (scope ConfigException exc) @trusted
 
 /*******************************************************************************
 
-    Process the content of the YAML document described by `node` into an
-    instance of the struct `T`.
+    Process the content of the document described by `node` into an instance of
+    the struct `T`.
 
     See the module description for a complete overview of this function.
 
@@ -278,7 +279,7 @@ public T parseConfig (T) (Node node, StrictMode strict = StrictMode.Error)
 
 /*******************************************************************************
 
-    The behavior to have when encountering a field in YAML not present
+    The behavior to have when encountering a field in the document not present
     in the config definition.
 
 *******************************************************************************/
@@ -306,7 +307,7 @@ package struct Context
 
     Params:
       TLFR = Top level field reference for this mapping
-      node = The YAML node object matching the struct being read
+      node = The node object matching the struct being read
       path = The runtime path to this mapping, used for nested types
       defaultValue = The default value to use for `T`, which can be different
                      from `T.init` when recursing into fields with initializers.
@@ -368,7 +369,7 @@ private TLFR.Type parseMapping (alias TLFR)
     auto convertField (alias FR) ()
     {
         static if (FR.Name != FR.FieldName)
-            dbgWrite("Field name `%s` will use YAML field `%s`",
+            dbgWrite("Field name `%s` will use document field `%s`",
                      FR.FieldName.paint(Yellow), FR.Name.paint(Green));
         // Using exact type here matters: we could get a qualified type
         // (e.g. `immutable(string)`) if the field is qualified,
@@ -408,11 +409,11 @@ private TLFR.Type parseMapping (alias TLFR)
         return node.withNode(FR.Name, (scope Node key, scope Node value) {
             if (value !is null)
             {
-                dbgWrite("%s: YAML field is %s in node%s",
+                dbgWrite("%s: document field is %s in node%s",
                     FR.Name.paint(Cyan), "present".paint(Green),
                     (FR.Name == FR.FieldName ? "" : " (note that field name is overriden)").paint(Yellow));
                 return value.parseField!(FR)(path.addPath(FR.Name), default_, ctx)
-                    .dbgWriteRet("Using value '%s' from YAML document for field '%s'",
+                    .dbgWriteRet("Using value '%s' from document for field '%s'",
                         FR.FieldName.paint(Cyan));
             }
 
@@ -512,7 +513,7 @@ private TLFR.Type parseMapping (alias TLFR)
     Parse a field, trying to match up the compile-time expectation with
     the run time value of the Node (`Node.Type`).
 
-    This is the central point which does "type conversion", from the YAML node
+    This is the central point which does "type conversion", from the node
     to the field type. Whenever adding support for a new type, things should
     happen here.
 
@@ -646,7 +647,7 @@ package FR.Type parseField (alias FR)
             }
 
             // We pass `E.init` as default value as it is not going to be used:
-            // Either there is something in the YAML document, and that will be
+            // Either there is something in the document, and that will be
             // converted, or `sequence` will not iterate.
             E[] result;
             foreach (size_t idx, scope Node value; seq)
@@ -745,7 +746,7 @@ private struct DurationMapping
     ///
     public void validate () const @safe
     {
-        // That check should never fail, as the YAML parser would error out,
+        // That check should never fail, as the document parser would error out,
         // but better be safe than sorry.
         foreach (field; this.tupleof)
             if (field.set)

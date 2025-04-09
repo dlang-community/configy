@@ -189,18 +189,16 @@ public struct SetInfo (T)
 
 /*******************************************************************************
 
-    Interface that is passed to `fromYAML` hook
+    Interface that is passed to `fromConfig` hook
 
-    The `ConfigParser` exposes the raw YAML node (`see `node` method),
+    The `ConfigParser` exposes the raw underlying node (see `node` method),
     the path within the file (`path` method), and a simple ability to recurse
-    via `parseAs`.
-
-    Params:
-      T = The type of the structure which defines a `fromYAML` hook
+    via `parseAs`. This allows to implement complex logic independent of the
+    underlying configuration format.
 
 *******************************************************************************/
 
-public interface ConfigParser (T)
+public interface ConfigParser
 {
     import configy.backend.node;
     import configy.fieldref : StructFieldRef;
@@ -217,7 +215,7 @@ public interface ConfigParser (T)
         Parse this struct as another type
 
         This allows implementing union-like behavior, where a `struct` which
-        implements `fromYAML` can parse a simple representation as one type,
+        implements `fromConfig` can parse a simple representation as one type,
         and one more advanced as another type.
 
         Params:

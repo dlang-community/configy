@@ -70,13 +70,13 @@
       in `core.time`: `weeks`, `days`, `hours`, `minutes`, `seconds`, `msecs`,
       `usecs`, `hnsecs`, `nsecs`. Strict parsing option will be respected.
       The values of the fields will then be added together, so the following
-      YAML usages are equivalent:
+      YAML usage:
       ---
       // sleepFor:
       //   hours: 8
       //   minutes: 30
       ---
-      and:
+      is equivalent to the less human-friendly version:
       ---
       // sleepFor:
       //   minutes: 510

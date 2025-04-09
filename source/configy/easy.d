@@ -106,10 +106,12 @@ public struct CLIArgs
 
 /*******************************************************************************
 
-    Attempt to read and process the config file at `path`, print any error
+    Attempt to read and deserialize the config file at `path` into the `struct`
+    type `Config` and print any error on failure
 
     This 'simple' overload of the more detailed `parseConfigFile` will attempt
-    to read the file at `path`, and return a `Nullable` instance of it.
+    to deserialize the content of the file at `path` into an instance of
+    `ConfigT`, and return a `Nullable` instance of it.
     If an error happens, either because the file isn't readable or
     the configuration has an issue, a message will be printed to `stderr`,
     with colors if the output is a TTY, and a `null` instance will be returned.
@@ -133,20 +135,22 @@ public struct CLIArgs
                  document, warn, or ignore them (default: `StrictMode.Error`)
 
     Returns:
-        An initialized `Config` instance if reading/parsing was successful;
+        An initialized `ConfigT` instance if reading/parsing was successful;
         a `null` instance otherwise.
 
 *******************************************************************************/
 
-public Nullable!T parseConfigFileSimple (T) (string path, StrictMode strict = StrictMode.Error)
+public Nullable!ConfigT parseConfigFileSimple (ConfigT)
+    (string path, StrictMode strict = StrictMode.Error)
 {
-    return wrapException(parseConfigFile!(T)(CLIArgs(path), strict));
+    return wrapException(parseConfigFile!(ConfigT)(CLIArgs(path), strict));
 }
 
 /// Ditto
-public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, StrictMode strict = StrictMode.Error)
+public Nullable!ConfigT parseConfigFileSimple (ConfigT)
+    (in CLIArgs args, StrictMode strict = StrictMode.Error)
 {
-    return wrapException(parseConfigFile!(args, strict));
+    return wrapException(parseConfigFile!(ConfigT)(args, strict));
 }
 
 /*******************************************************************************
@@ -154,43 +158,50 @@ public Nullable!T parseConfigFileSimple (T) (in CLIArgs args, StrictMode strict 
     Parses the config file or string and returns a `Config` instance.
 
     Params:
-        cmdln = command-line arguments (containing the path to the config)
+        ConfigT = A `struct` type used to drive the deserialization and
+                  validation. This type definition is the most important aspect
+                  of how Configy works.
+
+        args = command-line arguments (containing the path to the config)
         path = When parsing a string, the path corresponding to it
+        data = A string containing a valid YAML document to be processed
         strict = Whether the parsing should reject unknown keys in the
                  document, warn, or ignore them (default: `StrictMode.Error`)
 
     Throws:
-        `Exception` if parsing the config file failed.
+        `ConfigException` if deserializing the configuration into `ConfigT`
+         failed, or an underlying `Exception` if a backend failed (e.g.
+         `path` was not found).
 
     Returns:
-        `Config` instance
+        A valid `ConfigT` instance
 
 *******************************************************************************/
 
-public T parseConfigFile (T)
-    (in CLIArgs cmdln, StrictMode strict = StrictMode.Error)
+public ConfigT parseConfigFile (ConfigT)
+    (in CLIArgs args, StrictMode strict = StrictMode.Error)
 {
     import configy.backend.yaml;
 
-    auto root = parseFile(cmdln.config_path);
-    return parseConfig!T(root, strict);
+    auto root = parseFile(args.config_path);
+    return parseConfig!ConfigT(root, strict);
 }
 
 /// ditto
-public T parseConfigString (T)
+public ConfigT parseConfigString (ConfigT)
     (string data, string path, StrictMode strict = StrictMode.Error)
 {
-    CLIArgs cmdln = { config_path: path };
-    return parseConfigString!(T)(data, cmdln, strict);
+    CLIArgs args = { config_path: path };
+    return parseConfigString!(ConfigT)(data, args, strict);
 }
 
 /// ditto
-public T parseConfigString (T)
-    (string data, in CLIArgs cmdln, StrictMode strict = StrictMode.Error)
+public ConfigT parseConfigString (ConfigT)
+    (string data, in CLIArgs args, StrictMode strict = StrictMode.Error)
 {
     import configy.backend.yaml;
 
-    assert(cmdln.config_path.length, "No config_path provided to parseConfigString");
-    auto root = parseString(data, cmdln.config_path);
-    return parseConfig!T(root, strict);
+    assert(args.config_path.length, "No config_path provided to parseConfigString");
+    auto root = parseString(data, args.config_path);
+    return parseConfig!ConfigT(root, strict);
 }

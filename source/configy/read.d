@@ -782,15 +782,31 @@ package FR.Type parseField (alias FR)
             string key = getUDAs!(FR.Ref, Key)[0].name;
             return node.mapping().map!(
                 (Node.Pair pair) {
-                    if (pair.value.nodeID != NodeID.mapping)
-                        throw new TypeConfigException(
-                            "sequence of " ~ pair.value.nodeTypeString(),
-                            "sequence of mapping (array of objects)",
-                            path, Location.get(node));
+                    scope npath = path.addPath(pair.key.as!string);
+                    // Normal / expected path
+                    if (pair.value.nodeID == NodeID.mapping)
+                        return pair.value.parseMapping!(StructFieldRef!E)(npath,
+                            E.init, ctx, key.length ? [ key: pair.key ] : null);
 
-                    return pair.value.parseMapping!(StructFieldRef!E)(
-                        path.addPath(pair.key.as!string),
-                        E.init, ctx, key.length ? [ key: pair.key ] : null);
+                    // It might be a single entry, e.g.
+                    // ---
+                    // values:
+                    // morevalues:
+                    //   key: value
+                    // ---
+                    // In this instance, `values` is an empty mapping but might be
+                    // interpreted as a scalar.
+                    if (pair.value.type() == NodeType.null_) {
+                        string[string] aa;
+                        Node empty = aa;
+                        // Ugly hack to keep the location information
+                        __traits(getMember, empty, "startMark_") = pair.value.startMark();
+                        return empty.parseMapping!(StructFieldRef!E)(npath,
+                            E.init, ctx, key.length ? [ key: pair.key ] : null);
+                    }
+
+                    throw new TypeConfigException(pair.value.nodeTypeString(),
+                            "mapping", npath, Location.get(pair.value));
                 }).array();
         }
         else

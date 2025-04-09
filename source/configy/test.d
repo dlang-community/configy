@@ -986,3 +986,51 @@ ds:
     catch (ConfigException exc)
         assert(exc.toString() == "/dev/null(1:11): es.enabled: Expected to be a value of type bool, but is a scalar");
 }
+
+unittest {
+    static struct ImageConfig {
+        // Only this field is required
+        public string name;
+        public string containerfile = "Containerfile";
+        public @Optional string[] tags;
+    }
+
+    static struct ImageConfig2 {
+        // Both fields are required
+        public string name;
+        public string file;
+    }
+
+    static struct Config {
+        public @Optional @Key("name") ImageConfig[]  images;
+        public @Optional @Key("name") ImageConfig2[] images2;
+    }
+
+    auto c = parseConfigString!Config(`images:
+  foo/bar/root:
+    containerfile: path/Containerfile
+    tags: [ "latest" ]
+  far/boo/runner:
+`, "/dev/null");
+
+    assert(c.images[0].name == "foo/bar/root");
+    assert(c.images[0].containerfile == "path/Containerfile");
+    assert(c.images[1].name == "far/boo/runner");
+
+    try parseConfigString!Config(`images:
+  foo/bar/root:
+    containerfile: path/Containerfile
+    tags: [ "latest" ]
+  far/boo/runner: [ 1, 2, 3]
+`, "/dev/null");
+    catch (ConfigException exc)
+        assert(exc.toString() == "/dev/null(4:18): images.far/boo/runner: Expected to be mapping, but is a sequence");
+
+        try parseConfigString!Config(`images2:
+  foo/bar/root:
+    file: path/Containerfile
+  far/boo/runner:
+`, "/dev/null");
+    catch (ConfigException exc)
+        assert(exc.toString() == "/dev/null(3:17): images2.far/boo/runner.file: Required key was not found in configuration or command line arguments");
+}

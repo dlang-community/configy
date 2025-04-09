@@ -614,16 +614,29 @@ package FR.Type parseField (alias FR)
             string key = getUDAs!(FR.Ref, Key)[0].name;
             E[] result;
             foreach (scope Node k, scope Node value; mapping) {
+                scope npath = path.addPath(k.parseScalar!string(path));
                 if (scope vmap = value.asMapping()) {
-                    result ~= vmap.parseMapping!(StructFieldRef!E)(
-                        path.addPath(k.parseScalar!string(path)),
+                    result ~= vmap.parseMapping!(StructFieldRef!E)(npath,
                         E.init, ctx, key.length ? [ key: k ] : null);
+                    continue;
                 }
-                else
-                    throw new TypeConfigException(
-                        "sequence of " ~ value.type().toString(),
-                        "sequence of mapping (array of objects)",
-                        path, node.location());
+                // It might be a single entry, e.g.
+                // ---
+                // values:
+                // morevalues:
+                //   key: value
+                // ---
+                // In this instance, `values` is an empty mapping but might be
+                // interpreted as a scalar.
+                if (scope scalar = value.asScalar())
+                    if (scalar.str is null) {
+                        scope emptyNode = new EmptyNode(value.location());
+                        result ~= emptyNode.parseMapping!(StructFieldRef!E)(npath,
+                            E.init, ctx, key.length ? [ key: k ] : null);
+                        continue;
+                    }
+                throw new TypeConfigException(value.type().toString(), "mapping",
+                    npath, value.location());
             }
             return result;
         }

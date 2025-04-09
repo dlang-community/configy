@@ -182,7 +182,7 @@ public final class YAMLScalar : YAMLNode, Scalar {
 
     ///
     public override string str () const scope return @safe {
-        return this.n.as!string;
+        return this.n.type() == YN.NodeType.null_ ? null : this.n.as!string;
     }
 }
 

@@ -1,0 +1,6 @@
+{
+    "name": "myapp",
+    "dependencies": {
+        "configy": { "path": "../../", "version": "*" }
+    }
+}

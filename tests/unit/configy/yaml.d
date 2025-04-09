@@ -720,7 +720,7 @@ unittest
     version(none) auto c2 = parseConfigString!Config2(null, null);
 }
 
-/// Test support for `fromYAML` hook
+/// Test support for `fromConfig` hook
 unittest
 {
     static struct PackageDef
@@ -735,7 +735,7 @@ unittest
         string path;
         PackageDef def;
 
-        public static Package fromYAML (scope ConfigParser!Package parser)
+        public static Package fromConfig (scope ConfigParser parser)
         {
             if (parser.node.type() == parser.node.Type.Mapping)
                 return Package(null, parser.parseAs!PackageDef);
@@ -769,7 +769,7 @@ deps:
     assert(c.deps[3] == Package("/one/last/path"));
 }
 
-/// Test top level hook (fromYAML / fromString)
+/// Test top level hook (fromConfig / fromString)
 unittest
 {
     static struct Version1 {
@@ -789,7 +789,7 @@ unittest
             Version1 v1;
             Version2 v2;
         }
-        static Config fromYAML (scope ConfigParser!Config parser)
+        static Config fromConfig (scope ConfigParser parser)
         {
             static struct OnlyVersion { uint fileVersion; }
             auto vers = parseConfig!OnlyVersion(parser.node, StrictMode.Ignore);
@@ -984,7 +984,7 @@ right:
     assert(c.right.value == 2);
 }
 
-/// Documentation for `fromYAML`
+/// Documentation for `fromConfig`
 unittest {
     import std.exception;
     import std.sumtype;
@@ -1004,7 +1004,7 @@ unittest {
     static struct Config {
         SumType!(ServiceConfig, JobConfig) conf;
 
-        static Config fromYAML(scope ConfigParser!Config parser) {
+        static Config fromConfig (scope ConfigParser parser) {
             auto mapping = parser.node.asMapping();
             return mapping.withNode("type", (scope Node key, scope Node typeN) {
                 // This will point to the start of the file / section

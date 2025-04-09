@@ -193,15 +193,15 @@ or 87030 seconds.
 
 The library recognizes three possible ways (hooks) where a field of type `T`,
 where `T` is a `struct`, can be constructed:
-- The `T` has a `static` `fromYAML` method which accepts as sole non-default
-  argument is a `configy.attributes : ConfigParser!T`;
+- The `T` has a `static` `fromConfig` method which accepts as sole non-default
+  argument is a `configy.attributes : ConfigParser`;
 - The `T` has a `static` `fromString` method which accepts a single argument
   that is a string-like type (e.g. `scope const char[]` or just `string`),
   and returns an instance of a type that implicitly converts to `T`;
 - `T` has an explicitly-defined constructor that accepts, as a single parameter,
   a string-like type;
 
-If more than one option exists, the `fromYAML` hook will be preferred,
+If more than one option exists, the `fromConfig` hook will be preferred,
 followed by the `fromString` and finally the constructor.
 Otherwise, the library will default to field-wise construction.
 
@@ -306,7 +306,7 @@ It is also trivial to implement such a type if a project has specific needs.
 
 ### Implement really custom logic that Configy doesn't support
 
-Use the `fromYAML` static method:
+Use the `fromConfig` static method:
 ```
 struct Service { string name; }
 struct ServiceConfig {
@@ -324,7 +324,7 @@ struct JobConfig {
 struct Config {
     SumType!(ServiceConfig, JobConfig) conf;
 
-    static Config fromYAML(scope ConfigParser!Config parser) {
+    static Config fromConfig (scope ConfigParser parser) {
         const typeN = "type" in parser.node;
         // This will point to the start of the file / section
         enforce(typeN, "Missing required 'type' property");

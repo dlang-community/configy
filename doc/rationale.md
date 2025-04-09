@@ -22,7 +22,7 @@ one could support arbitrary section names with an associative array, but it woul
 done with `@Key("nameField")`.
 
 For such cases that fall outside of Configy's expectations, one may always "drop down"
-to using hooks (such as `fromString` or `fromYAML`) to implement any custom logic.
+to using hooks (such as `fromString` or `fromConfig`) to implement any custom logic.
 
 ## Data vs Identity
 
@@ -56,16 +56,16 @@ which is a problem for every configuration file.
 
 When designing a config format, even for internal schema, it might be useful to
 have types that are external, such as library types (be it Phobos, Vibe.d, or another).
-Those types are unlikely to have `fromYAML` support, and hence might need to be wrapped
+Those types are unlikely to have `fromConfig` support, and hence might need to be wrapped
 in another project-controlled type to be present in the configuration struct. To avoid
 needless wrapping, Configy supports the most common construction protocols: field-wise
 constructor (the default constructor), string constructor, or `fromString`. Anything
-else is likely to require a wrapping type that uses one of those methods, or `fromYAML`.
+else is likely to require a wrapping type that uses one of those methods, or `fromConfig`.
 
 ## Escape hatch
 
 In order to support both external schema, and unforeseen internal schema use cases,
-Configy provides a powerful escape hatch in the form of the `static` `fromYAML`
+Configy provides a powerful escape hatch in the form of the `static` `fromConfig`
 method. In order to avoid losing all the convenience of Configy once one "drops down"
 to that level, the `ConfigParser` exposes a `parseAs` method which allows one to
 recurse into the regular Configy parsing.

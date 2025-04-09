@@ -22,18 +22,6 @@
       To mark a field as optional even with its default value,
       use the `Optional` UDA: `@Optional int count = 0;`.
 
-    fromYAML:
-      Because config structs may contain complex types outside of the project's
-      control (e.g. a Phobos type, Vibe.d's `URL`, etc...) or one may want
-      the config format to be more dynamic (e.g. by exposing union-like behavior),
-      one may need to apply more custom logic than what Configy does.
-      For this use case, one can define a `fromYAML` static method in the type:
-      `static S fromYAML(scope ConfigParser!S parser)`, where `S` is the type of
-      the enclosing structure. Structs with `fromYAML` will have this method
-      called instead of going through the normal parsing rules.
-      The `ConfigParser` exposes the current path of the field, as well as the
-      raw YAML `Node` itself, allowing for maximum flexibility.
-
     Composite_Types:
       Processing starts from a `struct` at the top level, and recurse into
       every fields individually. If a field is itself a struct,
@@ -42,10 +30,10 @@
         be thrown with an error message detailing where the issue happened.
       - If the field has no value and is optional, the default value will
         be used.
-      - If the type has a `static` method named `fromYAML` whose sole
-        non-default argument is a `configy.attributes : ConfigParser!S` (where
-        `S` is the type of the struct), this hook will called to handle
-        deserialization. This is the prefered method to handle complex logic.
+      - If the type has a `static` method named `fromConfig` whose sole
+        non-default argument is a `configy.attributes : ConfigParser`, this hook
+        will called to handle deserialization. This is the prefered method to
+        handle complex logic.
       - If the type has a `static` method named `fromString` whose sole argument
         is a `string`, it will be used.
       - If the type has a constructor whose sole argument is a `string`,
@@ -53,6 +41,17 @@
       - Finally, the filler will attempt to deserialize all struct members
         one by one and pass them to the default constructor, if there is any.
       - If none of the above succeeded, a `static assert` will trigger.
+
+    fromConfig:
+      Because config structs may contain complex types outside of the project's
+      control (e.g. a Phobos type, Vibe.d's `URL`, etc...) or one may want
+      the config format to be more dynamic (e.g. by exposing union-like behavior),
+      one may need to apply more custom logic than what Configy does.
+      For this use case, one can define a `fromConfig` static method in the type:
+      `static S fromConfig(scope ConfigParser parser)`. Structs with `fromConfig`
+      will have this method called instead of going through the normal parsing
+      rules. The `ConfigParser` exposes the current path of the field, as well
+      as the raw `Node` itself, allowing for maximum flexibility.
 
     Alias_this:
       If a `struct` contains an `alias this`, the field that is aliased will be
@@ -515,7 +514,7 @@ private TLFR.Type parseMapping (alias TLFR)
     happen here.
 
     Because a `struct` can be filled from either a mapping or a scalar,
-    this function will first try the fromYAML / fromString / string ctor
+    this function will first try the fromConfig / fromString / string ctor
     methods before defaulting to fieldwise construction.
 
     Note that optional fields are checked before recursion happens,
@@ -536,10 +535,10 @@ package FR.Type parseField (alias FR)
             parseField!(FieldRef!(FR.Type, "value"))(node, path, defaultValue, ctx),
             true);
 
-    else static if (hasFromYAML!(FR.Type))
+    else static if (hasFromConfig!(FR.Type))
     {
-        scope impl = new ConfigParserImpl!(FR.Type)(node, path, ctx);
-        return wrapConstruct(FR.Type.fromYAML(impl), path, node.location());
+        scope impl = new ConfigParserImpl(node, path, ctx);
+        return wrapConstruct(FR.Type.fromConfig(impl), path, node.location());
     }
 
     else static if (hasFromString!(FR.Type))
@@ -672,8 +671,8 @@ package FR.Type parseField (alias FR)
     }
     else
     {
-        static assert (!is(FR.Type == union),
-                       "`union` are not supported. Use a `struct` with `fromYAML` instead");
+        static assert (!is(FR.Type == union), "`union` are not supported. " ~
+            "Use a `struct` with a hook (`fromConfig`, `fromString`, string constructor) instead");
         return node.parseScalar!(FR.Type)(path);
     }
 }
@@ -779,9 +778,9 @@ private struct DurationMapping
 private enum mightBeOptional (alias FR) = is(FR.Type == struct) &&
     !is(immutable(FR.Type) == immutable(core.time.Duration)) &&
     !hasFromString!(FR.Type) && !hasStringCtor!(FR.Type) &&
-    !hasFromYAML!(FR.Type);
+    !hasFromConfig!(FR.Type);
 
-private final class ConfigParserImpl (T) : ConfigParser!T
+private final class ConfigParserImpl : ConfigParser
 {
     private Node node_;
     private string path_;
@@ -889,7 +888,7 @@ private template hasFieldWiseCtor (alias FR)
 }
 
 /// Evaluates to `true` if `T` has a static method that is designed to work with this library
-private enum hasFromYAML (T) = is(typeof(T.fromYAML(ConfigParser!(T).init)) : T);
+private enum hasFromConfig (T) = is(typeof(T.fromConfig(ConfigParser.init)) : T);
 
 /// Evaluates to `true` if `T` has a static method that accepts a `string` and returns a `T`
 private enum hasFromString (T) = is(typeof(T.fromString(string.init)) : T);

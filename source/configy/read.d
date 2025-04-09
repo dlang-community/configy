@@ -42,8 +42,10 @@
         be thrown with an error message detailing where the issue happened.
       - If the field has no value and is optional, the default value will
         be used.
-      - If the field has a value, the filler will first check for a converter
-        and use it if present.
+      - If the type has a `static` method named `fromYAML` whose sole
+        non-default argument is a `configy.attributes : ConfigParser!S` (where
+        `S` is the type of the struct), this hook will called to handle
+        deserialization. This is the prefered method to handle complex logic.
       - If the type has a `static` method named `fromString` whose sole argument
         is a `string`, it will be used.
       - If the type has a constructor whose sole argument is a `string`,
@@ -103,8 +105,6 @@
       Those forms are mutually exclusive, so a field with a unit suffix
       will error out if a mapping is used. This prevents surprises and ensures
       that the error message, if any, is consistent accross user input.
-
-      To disable or change this behavior, one may use a `Converter` instead.
 
     Strict_Parsing:
       When strict parsing is enabled, the config filler will also validate
@@ -455,15 +455,12 @@ private TLFR.Type parseMapping (alias TLFR)
             static assert(FR.Name == FR.FieldName,
                           "Field `" ~ fullyQualifiedName!(FR.Ref) ~
                           "` is the target of an `alias this` and cannot have a `@Name` attribute");
-            static assert(!hasConverter!(FR.Ref),
-                          "Field `" ~ fullyQualifiedName!(FR.Ref) ~
-                          "` is the target of an `alias this` and cannot have a `@Converter` attribute");
 
             alias convertW(string FieldName) = convert!(FieldRef!(FR.Type, FieldName, FR.Optional));
             static assert(hasFieldWiseCtor!FR, "Type `" ~ FR.Type.stringof
                           ~ "` used for `alias this` in type `" ~ TLFR.Type.stringof
                           ~ "` does not support field-wise (default) construction: "
-                          ~ "Add field-wise constructor, a string constructor, or a converter");
+                          ~ "Add field-wise constructor, a string constructor, or a hook");
             return FR.Type(staticMap!(convertW, FieldNameTuple!(FR.Type)));
         }
         else
@@ -500,11 +497,11 @@ private TLFR.Type parseMapping (alias TLFR)
     }
 
     // This might trigger things like "`this` is not accessible".
-    // In this case, the user most likely needs to provide a converter.
+    // In this case, the user most likely needs to provide a hook.
     alias convertWrapper(string FieldName) = convert!(FieldRef!(TLFR.Type, FieldName));
     static assert(hasFieldWiseCtor!TLFR, "Type `" ~ TLFR.Type.stringof
                   ~ "` does not support field-wise (default) construction: "
-                  ~ "Add field-wise constructor, a string constructor, or a converter");
+                  ~ "Add field-wise constructor, a string constructor, or a hook");
     return doValidation(TLFR.Type(staticMap!(convertWrapper, FieldNameTuple!(TLFR.Type))));
 }
 
@@ -518,7 +515,7 @@ private TLFR.Type parseMapping (alias TLFR)
     happen here.
 
     Because a `struct` can be filled from either a mapping or a scalar,
-    this function will first try the converter / fromString / string ctor
+    this function will first try the fromYAML / fromString / string ctor
     methods before defaulting to fieldwise construction.
 
     Note that optional fields are checked before recursion happens,
@@ -538,9 +535,6 @@ package FR.Type parseField (alias FR)
         return FR.Type(
             parseField!(FieldRef!(FR.Type, "value"))(node, path, defaultValue, ctx),
             true);
-
-    else static if (hasConverter!(FR.Ref))
-        return wrapConstruct(node.viaConverter!(FR), path, node.location());
 
     else static if (hasFromYAML!(FR.Type))
     {
@@ -679,7 +673,7 @@ package FR.Type parseField (alias FR)
     else
     {
         static assert (!is(FR.Type == union),
-                       "`union` are not supported. Use a converter instead");
+                       "`union` are not supported. Use a `struct` with `fromYAML` instead");
         return node.parseScalar!(FR.Type)(path);
     }
 }
@@ -784,26 +778,8 @@ private struct DurationMapping
 /// Evaluates to `true` if we should recurse into the struct via `parseMapping`
 private enum mightBeOptional (alias FR) = is(FR.Type == struct) &&
     !is(immutable(FR.Type) == immutable(core.time.Duration)) &&
-    !hasConverter!(FR.Ref) && !hasFromString!(FR.Type) &&
-    !hasStringCtor!(FR.Type) && !hasFromYAML!(FR.Type);
-
-/// Convenience template to check for the presence of converter(s)
-private enum hasConverter (alias Field) = hasUDA!(Field, Converter);
-
-/// Provided a field reference `FR` which is known to have at least one converter,
-/// perform basic checks and return the value after applying the converter.
-private auto viaConverter (alias FR) (Node node)
-{
-    enum Converters = getUDAs!(FR.Ref, Converter);
-    static assert (Converters.length,
-                   "Internal error: `viaConverter` called on field `" ~
-                   FR.FieldName ~ "` with no converter");
-
-    static assert(Converters.length == 1,
-                  "Field `" ~ FR.FieldName ~ "` cannot have more than one `Converter`");
-
-    return Converters[0].converter(node);
-}
+    !hasFromString!(FR.Type) && !hasStringCtor!(FR.Type) &&
+    !hasFromYAML!(FR.Type);
 
 private final class ConfigParserImpl (T) : ConfigParser!T
 {

@@ -327,7 +327,7 @@ public class MissingKeyException : ConfigException
     }
 }
 
-/// Wrap an user-thrown Exception that happened in a Converter/ctor/fromString
+/// Wrap an user-thrown Exception that happened in a hook/ctor
 public class ConstructionException : ConfigException
 {
     /// Constructor

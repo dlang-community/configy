@@ -191,16 +191,17 @@ or 87030 seconds.
 
 ### Implement complex types that are not composite types of simple types
 
-The library recognizes three possible ways where a field of type `T`,
+The library recognizes three possible ways (hooks) where a field of type `T`,
 where `T` is a `struct`, can be constructed:
+- The `T` has a `static` `fromYAML` method which accepts as sole non-default
+  argument is a `configy.attributes : ConfigParser!T`;
 - The `T` has a `static` `fromString` method which accepts a single argument
   that is a string-like type (e.g. `scope const char[]` or just `string`),
   and returns an instance of a type that implicitly converts to `T`;
 - `T` has an explicitly-defined constructor that accepts, as a single parameter,
   a string-like type;
-- The field has a `@Converter` attribute;
 
-If more than one option exists, the `Converter` will be preferred,
+If more than one option exists, the `fromYAML` hook will be preferred,
 followed by the `fromString` and finally the constructor.
 Otherwise, the library will default to field-wise construction.
 

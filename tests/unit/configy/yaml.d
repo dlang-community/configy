@@ -348,16 +348,6 @@ unittest
         @Optional ThrowingCtor ctor;
         @Optional ThrowingFromString fromString;
         @Optional ThrowingValidate validated;
-
-        @Converter!int(
-            (Node value) {
-                // We have to trick DMD a bit so that it infers an `int` return
-                // type but doesn't emit a "Statement is not reachable" warning
-                if (value is Node.init || value !is Node.init )
-                    throw new Exception("You shall not pass");
-                return 42;
-            })
-        @Optional int converter;
     }
 
     static struct Config
@@ -393,16 +383,6 @@ unittest
     catch (ConfigException exc)
     {
         assert(exc.toString() == "/dev/null(4:5): config.validated: Bad data, try again");
-    }
-
-    try
-    {
-        auto result = parseConfigString!Config("config:\n  value: 42\n  converter: 42", "/dev/null");
-        assert(0);
-    }
-    catch (ConfigException exc)
-    {
-        assert(exc.toString() == "/dev/null(3:14): config.converter: You shall not pass");
     }
 
     // We also need to test with arrays, to ensure they are correctly called

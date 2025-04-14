@@ -16,8 +16,6 @@ module configy.exceptions;
 import configy.utils;
 import configy.backend.node;
 
-import dyaml.exception;
-
 import std.algorithm : filter, map;
 import std.format;
 import std.string : soundexer;

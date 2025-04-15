@@ -47,11 +47,11 @@ public interface Node {
     public Type type () const scope @safe nothrow;
 
     /// Returns: `this` typed as a `Mapping`, or `null` if it isn't a mapping
-    public inout(Mapping) asMapping () inout scope @safe;
+    public inout(Mapping) asMapping () inout return scope @safe;
     /// Returns: `this` typed as a `Sequence`, or `null` if it isn't a sequence
-    public inout(Sequence) asSequence () inout scope @safe;
+    public inout(Sequence) asSequence () inout return scope @safe;
     /// Returns: `this` typed as a `Scalar`, or `null` if it isn't a scalar
-    public inout(Scalar) asScalar () inout scope @safe;
+    public inout(Scalar) asScalar () inout return scope @safe;
 }
 
 /// Represent a mapping / object in a document

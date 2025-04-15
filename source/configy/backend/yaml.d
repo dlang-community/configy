@@ -87,9 +87,9 @@ public abstract class YAMLNode : Node {
         return Location(m.name, m.line + 1, m.column + 1);
     }
 
-    public override inout(Mapping)  asMapping () inout scope @safe  { return null; }
-    public override inout(Sequence) asSequence () inout scope @safe { return null; }
-    public override inout(Scalar)   asScalar () inout scope @safe   { return null; }
+    public override inout(Mapping)  asMapping () inout return scope @safe  { return null; }
+    public override inout(Sequence) asSequence () inout return scope @safe { return null; }
+    public override inout(Scalar)   asScalar () inout return scope @safe   { return null; }
 }
 
 
@@ -106,7 +106,7 @@ public final class YAMLMapping : YAMLNode, Mapping {
     }
 
     ///
-    public override inout(YAMLMapping) asMapping () inout scope @safe {
+    public override inout(YAMLMapping) asMapping () inout return scope @safe {
         return this;
     }
 
@@ -141,7 +141,7 @@ public final class YAMLSequence : YAMLNode, Sequence {
     }
 
     ///
-    public override inout(YAMLSequence) asSequence () inout scope @safe {
+    public override inout(YAMLSequence) asSequence () inout return scope @safe {
         return this;
     }
 
@@ -176,7 +176,7 @@ public final class YAMLScalar : YAMLNode, Scalar {
     }
 
     ///
-    public override inout(YAMLScalar) asScalar () inout scope @safe {
+    public override inout(YAMLScalar) asScalar () inout return scope @safe {
         return this;
     }
 

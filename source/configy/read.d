@@ -930,9 +930,9 @@ private final class EmptyNode : Mapping {
         this.location_ = loc;
     }
 
-    public override inout(Mapping)  asMapping () inout scope @safe  { return this; }
-    public override inout(configy.backend.node.Sequence) asSequence () inout scope @safe { return null; }
-    public override inout(Scalar)   asScalar () inout scope @safe   { return null; }
+    public override inout(Mapping)  asMapping () inout return scope @safe  { return this; }
+    public override inout(configy.backend.node.Sequence) asSequence () inout return scope @safe { return null; }
+    public override inout(Scalar)   asScalar () inout return scope @safe   { return null; }
 
     ///
     public override Type type () const scope @safe nothrow { return Type.Mapping; }

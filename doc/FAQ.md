@@ -307,7 +307,7 @@ It is also trivial to implement such a type if a project has specific needs.
 ### Implement really custom logic that Configy doesn't support
 
 Use the `fromConfig` static method:
-```
+```D
 struct Service { string name; }
 struct ServiceConfig {
     Only!(["service"]) type;

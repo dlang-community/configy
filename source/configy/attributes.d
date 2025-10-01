@@ -253,11 +253,12 @@ public struct Only (string[] Values) {
 
     alias value this;
 
-    public static Only fromString (scope string str) {
+    public static Only fromYAML (scope ConfigParser!Only cp) {
         import std.algorithm.searching : canFind;
         import std.exception : enforce;
         import std.format;
 
+        scope str = cp.parseAs!string;
         enforce(Values.canFind(str),
             "%s is not a valid value for this field, valid values are: %(%s, %)"
             .format(str, Values));

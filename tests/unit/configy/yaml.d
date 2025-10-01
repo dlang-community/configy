@@ -818,6 +818,38 @@ unittest
     assert(v2.v2.str == "hello world");
 }
 
+/// Test calling fromString on scalars only
+unittest
+{
+    static struct Job {
+        static struct Image {
+            string name;
+            bool force_pull;
+            static Image fromString(string s) {
+                Image v;
+                v.name = s;
+                return v;
+            }
+        }
+        Image image;
+    }
+    struct Config { Job job; }
+
+    auto c1 = parseConfigString!Config(`
+job:
+  image: ruby:3.0
+`, "/dev/null");
+    auto c2 = parseConfigString!Config(`
+job:
+  image:
+    name: ruby:3.0
+    force_pull: true
+`, "/dev/null");
+    assert(c1.job.image.name == "ruby:3.0");
+    assert(c2.job.image.name == "ruby:3.0");
+    assert(c2.job.image.force_pull);
+}
+
 /// Don't call `opCmp` / `opEquals` as they might not be CTFEable
 /// Also various tests around static arrays
 unittest

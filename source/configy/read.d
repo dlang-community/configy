@@ -542,7 +542,14 @@ package FR.Type parseField (alias FR)
     }
 
     else static if (hasFromString!(FR.Type))
-        return wrapConstruct(FR.Type.fromString(node.parseScalar!(string)(path)), path, node.location());
+    {
+        if (auto mapping = node.asMapping())
+            return mapping.parseMapping!(FR)(path, defaultValue, ctx, null);
+        else if (auto scalar = node.asScalar())
+            return wrapConstruct(FR.Type.fromString(scalar.str), path, node.location());
+        else
+            throw new TypeConfigException(node, "a mapping (object) or a scalar", path);
+    }
 
     else static if (hasStringCtor!(FR.Type))
         return wrapConstruct(FR.Type(node.parseScalar!(string)(path)), path, node.location());

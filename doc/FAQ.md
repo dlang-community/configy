@@ -134,7 +134,7 @@ and use the name as a key, for example:
 interfaces:
   eth0:
     ip: "192.168.0.1"
-    private: true
+    connected: true
   wlan0:
     ip: "1.2.3.4"
 ```
@@ -144,7 +144,7 @@ by recognizing that the above is syntax sugar for the following configuration:
   interfaces:
     - name: eth0
       ip: "192.168.0.1"
-      private: true
+      connected: true
     - name: wlan0
       ip: "1.2.3.4"
 ```
@@ -154,14 +154,14 @@ Using an array and the `@Key(string)` attribute, we can parse the first example:
 struct Config
 {
     @Key("name")
-    InterfaceConfig interfaces;
+    InterfaceConfig[] interfaces;
 }
 
 struct InterfaceConfig
 {
     string name;
     string ip;
-    bool private;
+    bool connected;
 }
 ```
 Removing the `@Key("name")` attribute will instead parse the second example.

@@ -1034,3 +1034,35 @@ unittest {
     catch (ConfigException exc)
         assert(exc.toString() == "/dev/null(3:17): images2.far/boo/runner.file: Required key was not found in configuration or command line arguments");
 }
+
+unittest {
+    import std.exception;
+
+    static struct Name {
+        string value;
+        public this (string val) inout @safe pure {
+            enforce(val == "production" || val == "prod" || val == "dev", "Invalid environment name used");
+            this.value = val;
+        }
+    }
+
+    static struct Config {
+        string[Name] variables;
+    }
+
+    auto c = parseConfigString!Config(`variables:
+  production: "supersecret"
+  dev: "notsosecret"
+`, "/dev/null");
+    assert(c.variables.length == 2);
+    assert(c.variables[Name("production")] == "supersecret");
+    assert(c.variables[Name("dev")] == "notsosecret");
+
+    try parseConfigString!Config(`variables:
+  production: "supersecret"
+  produtcion: "that's a typo"
+  dev: "notsosecret"
+`, "/dev/null");
+    catch (ConfigException exc)
+        assert(exc.toString() == "/dev/null(2:2): variables[produtcion]: Invalid environment name used");
+}

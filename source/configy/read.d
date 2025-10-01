@@ -758,7 +758,8 @@ package FR.Type parseField (alias FR)
         return node.mapping().map!(
                 (Node.Pair pair) {
                     return tuple(
-                        pair.key.get!K,
+                        pair.key.parseField!(NestedFieldRef!(K, FR))(
+                            format("%s[%s]", path, pair.key.as!string), K.init, ctx),
                         pair.value.parseField!(NestedFieldRef!(E, FR))(
                             format("%s[%s]", path, pair.key.as!string), E.init, ctx));
                 }).assocArray();

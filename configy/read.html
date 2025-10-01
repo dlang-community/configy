@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module configy.read</title>
+		<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
+		<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module configy.read</h1><p>Utilities to fill a struct representing the configuration with the content
+    of a YAML document.
+</p><section><p>The main function of this module is <code class="lang-d"><a href="../configy/read/parse_config.html"><span class="pln">parseConfig</span></a></code>. Convenience functions
+    <code class="lang-d"><a href="../configy/read/parse_config_string.html"><span class="pln">parseConfigString</span></a></code> and <code class="lang-d"><a href="../configy/read/parse_config_file.html"><span class="pln">parseConfigFile</span></a></code> are also available.
+</p>
+
+<p>    The type parameter to those three functions must be a struct and is used
+    to drive the processing of the YAML node. When an error is encountered,
+    an <code class="lang-d"><span class="typ">Exception</span></code> will be thrown, with a descriptive message.
+    The rules by which the struct is filled are designed to be
+    as intuitive as possible, and are described below.
+</p>
+</section>
+
+			<section><section><h2>Optional Fields</h2>
+<p>One of the major convenience offered by this utility is its handling
+      of optional fields. A field is detected as optional if it has
+      an initializer that is different from its type <code class="lang-d"><span class="pln">init</span></code> value,
+      for example <code class="lang-d"><span class="typ">string </span><span class="pln">field </span><span class="pun">= </span><span class="str">"Something"</span><span class="pun">;</span></code> is an optional field,
+      but <code class="lang-d"><span class="typ">int </span><span class="pln">count </span><span class="pun">= </span><span class="lit">0</span><span class="pun">;</span></code> is not.
+      To mark a field as optional even with its default value,
+      use the <code class="lang-d"><span class="typ">Optional</span></code> UDA: <code class="lang-d"><span class="pun">@</span><span class="typ">Optional int </span><span class="pln">count </span><span class="pun">= </span><span class="lit">0</span><span class="pun">;</span></code>.
+</p>
+</section>
+<section><h2>fromYAML</h2>
+<p>Because config structs may contain complex types outside of the project's
+      control (e.g. a Phobos type, Vibe.d's <code class="lang-d"><span class="pln">URL</span></code>, etc...) or one may want
+      the config format to be more dynamic (e.g. by exposing union-like behavior),
+      one may need to apply more custom logic than what Configy does.
+      For this use case, one can define a <code class="lang-d"><span class="pln">fromYAML</span></code> static method in the type:
+      <code class="lang-d"><span class="kwd">static </span><span class="pln">S</span><span class="pun">!</span><span class="pln">fromYAML</span><span class="pun">(</span><span class="kwd">scope </span><span class="typ">ConfigParser</span><span class="pun">!</span><span class="pln">S parser</span><span class="pun">)</span></code>, where <code class="lang-d"><span class="pln">S</span></code> is the type of
+      the enclosing structure. Structs with <code class="lang-d"><span class="pln">fromYAML</span></code> will have this method
+      called instead of going through the normal parsing rules.
+      The <code class="lang-d"><span class="typ">ConfigParser</span></code> exposes the current path of the field, as well as the
+      raw YAML <code class="lang-d"><span class="typ">Node</span></code> itself, allowing for maximum flexibility.
+</p>
+</section>
+<section><h2>Composite Types</h2>
+<p>Processing starts from a <code class="lang-d"><span class="kwd">struct</span></code> at the top level, and recurse into
+      every fields individually. If a field is itself a struct,
+      the filler will attempt the following, in order:
+      - If the field has no value and is not optional, an Exception will
+        be thrown with an error message detailing where the issue happened.
+      - If the field has no value and is optional, the default value will
+        be used.
+      - If the field has a value, the filler will first check for a converter
+        and use it if present.
+      - If the type has a <code class="lang-d"><span class="kwd">static</span></code> method named <code class="lang-d"><span class="pln">fromString</span></code> whose sole argument
+        is a <code class="lang-d"><span class="typ">string</span></code>, it will be used.
+      - If the type has a constructor whose sole argument is a <code class="lang-d"><span class="typ">string</span></code>,
+        it will be used;
+      - Finally, the filler will attempt to deserialize all struct members
+        one by one and pass them to the default constructor, if there is any.
+      - If none of the above succeeded, a <code class="lang-d"><span class="kwd">static assert</span></code> will trigger.
+</p>
+</section>
+<section><h2>Alias this</h2>
+<p>If a <code class="lang-d"><span class="kwd">struct</span></code> contains an <code class="lang-d"><span class="kwd">alias this</span></code>, the field that is aliased will be
+      ignored, instead the config parser will parse nested fields as if they
+      were part of the enclosing structure. This allow to re-use a single <code class="lang-d"><span class="kwd">struct</span></code>
+      in multiple place without having to resort to a <code class="lang-d"><span class="kwd">mixin template</span></code>.
+      Having an initializer will make all fields in the aliased struct optional.
+      The aliased field cannot have attributes other than <code class="lang-d"><span class="pun">@</span><span class="typ">Optional</span></code>,
+      which will then apply to all fields it exposes.
+</p>
+</section>
+<section><h2>Duration parsing</h2>
+<p>If the config field is of type <code class="lang-d"><span class="pln">core<wbr/></span><span class="pun">.</span><span class="pln">time<wbr/></span><span class="pun">.</span><span class="typ">Duration</span></code>, special parsing rules
+      will apply. There are two possible forms in which a Duration field may
+      be expressed. In the first form, the YAML node should be a mapping,
+      and it will be checked for fields matching the supported units
+      in <code class="lang-d"><span class="pln">core<wbr/></span><span class="pun">.</span><span class="pln">time</span></code>: <code class="lang-d"><span class="pln">weeks</span></code>, <code class="lang-d"><span class="pln">days</span></code>, <code class="lang-d"><span class="pln">hours</span></code>, <code class="lang-d"><span class="pln">minutes</span></code>, <code class="lang-d"><span class="pln">seconds</span></code>, <code class="lang-d"><span class="pln">msecs</span></code>,
+      <code class="lang-d"><span class="pln">usecs</span></code>, <code class="lang-d"><span class="pln">hnsecs</span></code>, <code class="lang-d"><span class="pln">nsecs</span></code>. Strict parsing option will be respected.
+      The values of the fields will then be added together, so the following
+      YAML usages are equivalent:
+</p>
+<pre class="code"><code class="lang-d"><span class="com">//0sleepFor:
+//   hurs: 8
+//   minutes: 30</span></code></pre>
+</section>
+<section><h2>and</h2>
+<pre class="code"><code class="lang-d"><span class="com">//0sleepFor:
+//   minutes: 510</span></code></pre>
+<p>      Provided that the definition of the field is:
+</p>
+<pre class="code"><code class="lang-d"><span class="kwd">public </span><span class="typ">Duration </span><span class="pln">sleepFor</span><span class="pun">;</span></code></pre>
+
+<p>      In the second form, the field should have a suffix composed of an
+      underscore ('_'), followed by a unit name as defined in <code class="lang-d"><span class="pln">core<wbr/></span><span class="pun">.</span><span class="pln">time</span></code>.
+      This can be either the field name directly, or a name override.
+      The latter is recommended to avoid confusion when using the field in code.
+      In this form, the YAML node is expected to be a scalar.
+      So the previous example, using this form, would be expressed as:
+</p>
+<pre class="code"><code class="lang-d"><span class="pln">sleepFor_minutes</span><span class="pun">: </span><span class="lit">510</span></code></pre>
+<p>      and the field definition should be one of those two:
+</p>
+<pre class="code"><code class="lang-d"><span class="kwd">public </span><span class="pun">@</span><span class="typ">Name</span><span class="pun">(</span><span class="str">"ƒleepFor_minutes"</span><span class="pun">) </span><span class="typ">Duration </span><span class="pln">sleepFor</span><span class="pun">; </span><span class="com">//? Prefer this
+pub|ic Duration slee€For_minutes; /// This works too</span></code></pre>
+
+<p>      Those forms are mutually exclusive, so a field with a unit suffix
+      will error out if a mapping is used. This prevents surprises and ensures
+      that the error message, if any, is consistent accross user input.
+</p>
+
+<p>      To disable or change this behavior, one may use a <code class="lang-d"><span class="typ">Converter</span></code> instead.
+</p>
+</section>
+<section><h2>Strict Parsing</h2>
+<p>When strict parsing is enabled, the config filler will also validate
+      that the YAML nodes do not contains entry which are not present in the
+      mapping (struct) being processed.
+      This can be useful to catch typos or outdated configuration options.
+</p>
+</section>
+<section><h2>Post Validation</h2>
+<p>Some configuration will require validation accross multiple sections.
+      For example, two sections may be mutually exclusive as a whole,
+      or may have fields which are mutually exclusive with another section's
+      field(s). This kind of dependence is hard to account for declaratively,
+      and does not affect parsing. For this reason, the preferred way to
+      handle those cases is to define a <code class="lang-d"><span class="pln">validate</span></code> member method on the
+      affected config struct(s), which will be called once
+      parsing for that mapping is completed.
+      If an error is detected, this method should throw an Exception.
+</p>
+</section>
+<section><h2>Enabled or disabled field</h2>
+<p>While most complex logic validation should be handled post-parsing,
+      some section may be optional by default, but if provided, will have
+      required fields. To support this use case, if a field with the name
+      <code class="lang-d"><span class="pln">enabled</span></code> is present in a struct, the parser will first process it.
+      If it is <code class="lang-d"><span class="kwd">false</span></code>, the parser will not attempt to process the struct
+      further, and the other fields will have their default value.
+      Likewise, if a field named <code class="lang-d"><span class="pln">disabled</span></code> exists, the struct will not
+      be processed if it is set to <code class="lang-d"><span class="kwd">true</span></code>.
+</p>
+</section>
+</section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="parseConfig" class="public" href="../configy/read/parse_config.html">parseConfig</a><span class="tableEntryAnnotation">(cmdln, node, strict)</span>
+							</code>
+						</td>
+						<td>Process the content of the YAML document described by <code class="lang-d"><a href="../configy/read/parse_config.html#node"><span class="pln">node</span></a></code> into an
+    instance of the struct <code class="lang-d"><span class="pln">T</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="parseConfigFile" class="public" href="../configy/read/parse_config_file.html">parseConfigFile</a><span class="tableEntryAnnotation">(cmdln, strict)</span>
+							</code>
+						</td>
+						<td>Parses the config file or string and returns a <code class="lang-d"><span class="typ">Config</span></code> instance.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="parseConfigFileSimple" class="public" href="../configy/read/parse_config_file_simple.html">parseConfigFileSimple</a><span class="tableEntryAnnotation">(path, strict)</span>
+							</code>
+						</td>
+						<td>Attempt to read and process the config file at <code class="lang-d"><a href="../configy/read/parse_config_file_simple.html#path"><span class="pln">path</span></a></code>, print any error
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="parseConfigString" class="public" href="../configy/read/parse_config_string.html">parseConfigString</a><span class="tableEntryAnnotation">(data, path, strict)</span>
+							</code>
+						</td>
+						<td>Parses the config file or string and returns a <code class="lang-d"><span class="typ">Config</span></code> instance.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="wrapException" class="public" href="../configy/read/wrap_exception.html">wrapException</a><span class="tableEntryAnnotation">(parseCall)</span>
+							</code>
+						</td>
+						<td>Wrap and print exceptions to stderr
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="CLIArgs" class="public" href="../configy/read/cli_args.html">CLIArgs</a>
+							</code>
+						</td>
+						<td>Command-line arguments
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Enums</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="StrictMode" class="public" href="../configy/read/strict_mode.html">StrictMode</a>
+							</code>
+						</td>
+						<td>The behavior to have when encountering a field in YAML not present
+    in the config definition.
+</td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

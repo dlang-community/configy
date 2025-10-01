@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Function parseConfigFile</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Function parseConfigFile</h1><p>Parses the config file or string and returns a <code class="lang-d"><span class="typ">Config</span></code> instance.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="pln">T</span> <span class="pln">parseConfigFile</span>(T)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><a href="../../configy/read/cli_args.html"><span class="typ">CLIArgs</span></a> <span class="pln">cmdln</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<a href="../../configy/read/strict_mode.html"><span class="typ">StrictMode</span></a> <span class="pln">strict</span> <span class="pun">=</span> <span class="typ">StrictMode<wbr/></span><span class="pun">.</span><span class="typ">Error</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section></section>
+
+			<section><h2>Parameters</h2>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="cmdln">cmdln</td><td> command-line arguments (containing the path to the config)</td></tr>
+<tr><td id="path">path</td><td> When parsing a string, the path corresponding to it</td></tr>
+<tr><td id="strict">strict</td><td> Whether the parsing should reject unknown keys in the
+                 document, warn, or ignore them (default: <code class="lang-d"><a href="../../configy/read/strict_mode.html#Error"><span class="typ">StrictMode<wbr/></span><span class="pun">.</span><span class="typ">Error</span></a></code>)</td></tr>
+</table>
+</section>
+<section><h2>Throws</h2>
+<p><code class="lang-d"><span class="typ">Exception</span></code> if parsing the config file failed.
+</p>
+</section>
+<section><h2>Returns</h2>
+<p><code class="lang-d"><span class="typ">Config</span></code> instance
+</p>
+</section>
+
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

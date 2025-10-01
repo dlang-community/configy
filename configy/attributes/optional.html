@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Struct Optional</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module selected">
+						<a href="../../configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct Optional</h1><p>An optional parameter with an initial value of <code class="lang-d"><span class="pln">T<wbr/></span><span class="pun">.</span><span class="pln">init</span></code>
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">struct</span> <span class="typ">Optional</span>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>The config parser automatically recognize non-default initializer,
+    so that the following:
+    <code class="lang-d"></code>`
+    public struct Config
+    {
+        public string greeting = "Welcome home";
+    }
+    <code class="lang-d"></code>`
+    Will not error out if <code class="lang-d"><span class="pln">greeting</span></code> is not defined in the config file.
+    However, this relies on the initializer of the field (<code class="lang-d"><span class="pln">greeting</span></code>) being
+    different from the type initializer (<code class="lang-d"><span class="typ">string<wbr/></span><span class="pun">.</span><span class="pln">init</span></code> is <code class="lang-d"><span class="kwd">null</span></code>).
+    In some cases, the default value is also the desired initializer, e.g.:
+    <code class="lang-d"></code>`
+    public struct Config
+    {
+        /// Maximum number of connections. 0 means unlimited.
+        public uint connections_limit = 0;
+    }
+    <code class="lang-d"></code>`
+    In this case, one can add <code class="lang-d"><span class="pun">@</span><span class="typ">Optional</span></code> to the field to inform the parser.
+</p>
+</section>
+
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>API documentation</title>
+		<link rel="stylesheet" type="text/css" href="./styles/ddox.css"/>
+		<link rel="stylesheet" href="./prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="./scripts/jquery.js">/**/</script><script type="text/javascript" src="./scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="./symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "./";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="./configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>API documentation</h1>
+			<table>
+				<col class="caption"/>
+				<tr>
+					<th>Module</th><th>Description</th>
+				</tr>
+			<tr>
+				<td>
+					<a href="./configy/attributes.html">configy.attributes</a>
+				</td>
+				<td>
+					Define UDAs that can be applied to a configuration struct
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./configy/exceptions.html">configy.exceptions</a>
+				</td>
+				<td>
+					Definitions for Exceptions used by the config module.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./configy/fieldref.html">configy.fieldref</a>
+				</td>
+				<td>
+					Implement a template to keep track of a field references
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./configy/read.html">configy.read</a>
+				</td>
+				<td>
+					Utilities to fill a struct representing the configuration with the content
+    of a YAML document.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./configy/test.html">configy.test</a>
+				</td>
+				<td>
+					Contains all the tests for this library.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./configy/utils.html">configy.utils</a>
+				</td>
+				<td>
+					Utilities used internally by the config parser.
+
+				</td>
+			</tr>
+			</table>
+			<footer>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

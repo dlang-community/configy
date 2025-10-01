@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Converter/converter - multiple declarations</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module selected">
+						<a href="../../configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Converter/converter - multiple declarations</h1>
+			<nav class="page-nav">
+				<ul>
+					<li>
+						<a href="#0">
+							Function <code>converter</code>
+						</a>
+					</li>
+					<li>
+						<a href="#1">
+							Struct <code>Converter</code>
+						</a>
+					</li>
+				</ul>
+			</nav><h2 id="0">Function converter</h2><p>Provides a means to convert a field from a <code class="lang-d"><span class="typ">Node</span></code> to a complex type
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">auto</span> <span class="pln">converter</span>(FT)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">FT</span> <span class="pln">func</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>When filling the config, it might be useful to store types which are
+    not only simple <code class="lang-d"><span class="typ">string</span></code> and integer, such as <code class="lang-d"><span class="pln">URL</span></code>, <code class="lang-d"><span class="typ">BigInt</span></code>, or any other
+    library type not directly under the user's control.
+</p>
+
+<p>    To allow reading those values from the config file, a <code class="lang-d"><a href="../../configy/attributes/converter.html"><span class="typ">Converter</span></a></code> may
+    be used. The converter will tell the <code class="lang-d"><span class="typ">ConfigFiller</span></code> how to convert from
+    <code class="lang-d"><span class="typ">Node</span></code> to the desired type <code class="lang-d"><span class="pln">T</span></code>.
+</p>
+
+<p>    If the type is under the user's control, one can also add a constructor
+    accepting a single string, or define the <code class="lang-d"><span class="pln">fromString</span></code> method, both of which
+    are tried if no <code class="lang-d"><a href="../../configy/attributes/converter.html"><span class="typ">Converter</span></a></code> is found.
+</p>
+
+<p>    For types not under the user's control, there might be different ways
+    to parse the same type within the same struct, or neither the ctor nor
+    the <code class="lang-d"><span class="pln">fromString</span></code> method may be defined under that name.
+    The exmaple below uses <code class="lang-d"><span class="pln">parse</span></code> in place of <code class="lang-d"><span class="pln">fromString</span></code>, for example.
+</p>
+
+<p>    <code class="lang-d"></code>`
+    /// Complex structure representing the age of a person based on its birthday
+    public struct Age
+    {
+        ///
+        public uint birth_year;
+        ///
+        public uint birth_month;
+        ///
+        public uint birth_day;
+</p>
+
+<p>        /// Note that this will be picked up automatically if named <code class="lang-d"><span class="pln">fromString</span></code>
+        /// but this struct might be a library type.
+        public static Age parse (string value) { /+ Magic +/ }
+    }
+</p>
+
+<p>    public struct Person
+    {
+        ///
+        @Converter!Age((Node value) =&gt; Age.parse(value.as!string))
+        public Age age;
+    }
+    <code class="lang-d"></code>`
+</p>
+
+<p>    Note that some fields may also be of multiple YAML types, such as DUB's
+    <code class="lang-d"><span class="pln">dependencies</span></code>, which is either a simple string (<code class="lang-d"><span class="str">"†ibe-d": "~&gt;1.0 "</span></code>),
+    or an in its complex form (<code class="lang-d"><span class="str">"†ibe-d": { "version"</span><span class="pun">: </span><span class="str">"~&gt;1.0" </span><span class="pun">}</span></code>).
+    For those use cases, a <code class="lang-d"><a href="../../configy/attributes/converter.html"><span class="typ">Converter</span></a></code> is the best approach.
+</p>
+
+<p>    To avoid repeating the field type, a convenience function is provided:
+    <code class="lang-d"></code>`
+    public struct Age
+    {
+        public uint birth_year;
+        public uint birth_month;
+        public uint birth_day;
+        public static Age parse (string value) { /+ Magic +/ }
+    }
+</p>
+
+<p>    public struct Person
+    {
+        /// Here <code class="lang-d"><span class="pln">converter</span></code> will deduct the type from the delegate argument,
+        /// and return an instance  of <code class="lang-d"><a href="../../configy/attributes/converter.html"><span class="typ">Converter</span></a></code>. Mind the case.
+        @converter((Node value) =&gt; Age.parse(value.as!string))
+        public Age age;
+    }
+    <code class="lang-d"></code>`
+</p>
+</section>
+
+			<h2 id="1">Struct Converter</h2><p>Provides a means to convert a field from a <code class="lang-d"><span class="typ">Node</span></code> to a complex type
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">struct</span> <span class="typ">Converter</span>(T)
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>When filling the config, it might be useful to store types which are
+    not only simple <code class="lang-d"><span class="typ">string</span></code> and integer, such as <code class="lang-d"><span class="pln">URL</span></code>, <code class="lang-d"><span class="typ">BigInt</span></code>, or any other
+    library type not directly under the user's control.
+</p>
+
+<p>    To allow reading those values from the config file, a <code class="lang-d"><span class="typ">Converter</span></code> may
+    be used. The converter will tell the <code class="lang-d"><span class="typ">ConfigFiller</span></code> how to convert from
+    <code class="lang-d"><span class="typ">Node</span></code> to the desired type <code class="lang-d"><span class="pln">T</span></code>.
+</p>
+
+<p>    If the type is under the user's control, one can also add a constructor
+    accepting a single string, or define the <code class="lang-d"><span class="pln">fromString</span></code> method, both of which
+    are tried if no <code class="lang-d"><span class="typ">Converter</span></code> is found.
+</p>
+
+<p>    For types not under the user's control, there might be different ways
+    to parse the same type within the same struct, or neither the ctor nor
+    the <code class="lang-d"><span class="pln">fromString</span></code> method may be defined under that name.
+    The exmaple below uses <code class="lang-d"><span class="pln">parse</span></code> in place of <code class="lang-d"><span class="pln">fromString</span></code>, for example.
+</p>
+
+<p>    <code class="lang-d"></code>`
+    /// Complex structure representing the age of a person based on its birthday
+    public struct Age
+    {
+        ///
+        public uint birth_year;
+        ///
+        public uint birth_month;
+        ///
+        public uint birth_day;
+</p>
+
+<p>        /// Note that this will be picked up automatically if named <code class="lang-d"><span class="pln">fromString</span></code>
+        /// but this struct might be a library type.
+        public static Age parse (string value) { /+ Magic +/ }
+    }
+</p>
+
+<p>    public struct Person
+    {
+        ///
+        @Converter!Age((Node value) =&gt; Age.parse(value.as!string))
+        public Age age;
+    }
+    <code class="lang-d"></code>`
+</p>
+
+<p>    Note that some fields may also be of multiple YAML types, such as DUB's
+    <code class="lang-d"><span class="pln">dependencies</span></code>, which is either a simple string (<code class="lang-d"><span class="str">"†ibe-d": "~&gt;1.0 "</span></code>),
+    or an in its complex form (<code class="lang-d"><span class="str">"†ibe-d": { "version"</span><span class="pun">: </span><span class="str">"~&gt;1.0" </span><span class="pun">}</span></code>).
+    For those use cases, a <code class="lang-d"><span class="typ">Converter</span></code> is the best approach.
+</p>
+
+<p>    To avoid repeating the field type, a convenience function is provided:
+    <code class="lang-d"></code>`
+    public struct Age
+    {
+        public uint birth_year;
+        public uint birth_month;
+        public uint birth_day;
+        public static Age parse (string value) { /+ Magic +/ }
+    }
+</p>
+
+<p>    public struct Person
+    {
+        /// Here <code class="lang-d"><a href="../../configy/attributes/converter.converter.html"><span class="pln">converter</span></a></code> will deduct the type from the delegate argument,
+        /// and return an instance  of <code class="lang-d"><span class="typ">Converter</span></code>. Mind the case.
+        @converter((Node value) =&gt; Age.parse(value.as!string))
+        public Age age;
+    }
+    <code class="lang-d"></code>`
+</p>
+</section>
+
+			<section><h3>Fields</h3>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../configy/attributes/converter.converter.html" class="public"><code>converter</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../configy/attributes/converter.converter_func.html"><span class="typ">Converter<wbr/></span><span class="pun">.<wbr/></span><span class="typ">ConverterFunc</span></a></code></td><td></td>
+					</tr>
+				</table>
+			</section>
+			<section><h3>Aliases</h3>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../configy/attributes/converter.converter_func.html" class="public">
+								<code>ConverterFunc</code>
+							</a>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

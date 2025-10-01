@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Function parseConfigFileSimple</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Function parseConfigFileSimple</h1><p>Attempt to read and process the config file at <code class="lang-d"><a href="../../configy/read/parse_config_file_simple.html#path"><span class="pln">path</span></a></code>, print any error
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="typ">Nullable</span>!T <span class="pln">parseConfigFileSimple</span>(T)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">string</span> <span class="pln">path</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<a href="../../configy/read/strict_mode.html"><span class="typ">StrictMode</span></a> <span class="pln">strict</span> <span class="pun">=</span> <span class="typ">StrictMode<wbr/></span><span class="pun">.</span><span class="typ">Error</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+			<br/>
+			<br/>
+			<span class="typ">Nullable</span>!T <span class="pln">parseConfigFileSimple</span>(T)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><a href="../../configy/read/cli_args.html"><span class="typ">CLIArgs</span></a> <span class="pln">args</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<a href="../../configy/read/strict_mode.html"><span class="typ">StrictMode</span></a> <span class="pln">strict</span> <span class="pun">=</span> <span class="typ">StrictMode<wbr/></span><span class="pun">.</span><span class="typ">Error</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>This 'simple' overload of the more detailed <code class="lang-d"><a href="../../configy/read/parse_config_file.html"><span class="pln">parseConfigFile</span></a></code> will attempt
+    to read the file at <code class="lang-d"><a href="../../configy/read/parse_config_file_simple.html#path"><span class="pln">path</span></a></code>, and return a <code class="lang-d"><span class="typ">Nullable</span></code> instance of it.
+    If an error happens, either because the file isn't readable or
+    the configuration has an issue, a message will be printed to <code class="lang-d"><span class="pln">stderr</span></code>,
+    with colors if the output is a TTY, and a <code class="lang-d"><span class="kwd">null</span></code> instance will be returned.
+</p>
+
+<p>    The calling code can hence just read a config file via:
+    <code class="lang-d"></code>`
+    int main ()
+    {
+        auto configN = parseConfigFileSimple!Config("config.yaml");
+        if (configN.isNull()) return 1; // Error path
+        auto config = configN.get();
+        // Rest of the program ...
+    }
+    <code class="lang-d"></code>`
+    An overload accepting <code class="lang-d"><a href="../../configy/read/cli_args.html"><span class="typ">CLIArgs</span></a><span class="pln"> args</span></code> also exists.
+</p>
+</section>
+
+			<section><h2>Parameters</h2>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="path">path</td><td> Path of the file to read from</td></tr>
+<tr><td id="args">args</td><td> Command line arguments on which <code class="lang-d"><span class="pln">parse</span></code> has been called</td></tr>
+<tr><td id="strict">strict</td><td> Whether the parsing should reject unknown keys in the
+                 document, warn, or ignore them (default: <code class="lang-d"><a href="../../configy/read/strict_mode.html#Error"><span class="typ">StrictMode<wbr/></span><span class="pun">.</span><span class="typ">Error</span></a></code>)</td></tr>
+</table>
+</section>
+<section><h2>Returns</h2>
+<p>An initialized <code class="lang-d"><span class="typ">Config</span></code> instance if reading/parsing was successful;
+        a <code class="lang-d"><span class="kwd">null</span></code> instance otherwise.
+</p>
+</section>
+
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

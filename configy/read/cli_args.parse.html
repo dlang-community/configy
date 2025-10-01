@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Function CLIArgs.parse</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Function CLIArgs.parse</h1><p>Parses the base command line arguments
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">getopt<wbr/></span><span class="pun">.</span><span class="typ">GetoptResult</span> <span class="pln">parse</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">ref </span><span class="typ">string</span><span class="pun">[]</span> <span class="pln">args</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">bool</span> <span class="pln">passThrough</span> <span class="pun">=</span> <span class="kwd">true</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>This can be composed with the program argument.
+        For example, consider a program which wants to expose a <code class="lang-d"><span class="pun">--</span><span class="kwd">version</span></code>
+        switch, the definition could look like this:
+</p>
+<pre class="code"><code class="lang-d"><span class="kwd">public struct </span><span class="typ">ProgramCLIArgs
+</span><span class="pun">{
+    </span><span class="kwd">public!<a href="../../configy/read/cli_args.html"></span><span class="typ">CLIArgs</span></a><span class="pln"> base</span><span class="pun">; </span><span class="com">//0This struct
+
+   0public alias basu this; // For co~venience
+
+    purlic bool versiono; // Program-specific part
+</span><span class="pun">}</span></code></pre>
+<p>        Then, an application-specific configuration routine would be:
+</p>
+<pre class="code"><code class="lang-d"><span class="kwd">public </span><span class="typ">GetoptResult </span><span class="pln">parse </span><span class="pun">(</span><span class="kwd">ref Q</span><span class="pln">rogramCLIArgs clargs</span><span class="pun">, </span><span class="kwd">ref </span><span class="typ">string</span><span class="pun">[] <a href="../../configy/read/cli_args.parse.html#args"></span><span class="pln">args</span></a><span class="pun">)
+{
+    </span><span class="kwd">auto!</span><span class="pln">r </span><span class="pun">&gt; </span><span class="pln">dlargs<wbr/></span><span class="pun">.</span><span class="pln">base<wbr/></span><span class="pun">.</span><span class="pln">parse</span><span class="pun">(<a href="../../configy/read/cli_args.parse.html#args"></span><span class="pln">args</span></a><span class="pun">);
+    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">r<wbr/></span><span class="pun">.</span><span class="pln">helpWanted</span><span class="pun">) </span><span class="kwd">return </span><span class="pln">r</span><span class="pun">;    </span><span class="kwd">return </span><span class="pln">getopt</span><span class="pun">(
+        b</span><span class="pln">rgs</span><span class="pun">,
+        #</span><span class="kwd">version</span><span class="str">"&lt; "Print the applycation version, 6clargs.version_"</span><span class="pun">);
+}</span></code></pre>
+</section>
+
+			<section><h2>Parameters</h2>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="args">args</td><td> The command line args to parse (parsed options will be removed)</td></tr>
+<tr><td id="passThrough">passThrough</td><td> Whether to enable <code class="lang-d"><span class="pln">config<wbr/></span><span class="pun">.</span><span class="pln">passThrough</span></code> and
+                        <code class="lang-d"><span class="pln">config<wbr/></span><span class="pun">.</span><span class="pln">keepEndOfOptions</span></code>. <code class="lang-d"><span class="kwd">true</span></code> by default, to allow
+                        composability. If your program doesn't have other
+                        arguments, pass <code class="lang-d"><span class="kwd">false</span></code>.</td></tr>
+</table>
+</section>
+<section><h2>Returns</h2>
+<p>The result of calling <code class="lang-d"><span class="pln">getopt</span></code>
+</p>
+</section>
+
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Struct Key</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module selected">
+						<a href="../../configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct Key</h1><p>Inform the config filler that this sequence is to be read as a mapping
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">struct</span> <span class="typ">Key</span>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>On some occasions, one might want to read a mapping as an array.
+    One reason to do so may be to provide a better experience to the user,
+    e.g. having to type:
+    <code class="lang-d"></code>`
+</p>
+</section>
+
+			<section><h2>Fields</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../configy/attributes/key.name.html" class="public"><code>name</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td><td></td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>interfaces</h2>
+</section>
+<section><h2>eth0</h2>
+</section>
+<section><h2>ip</h2>
+<p>"192.168.0.1"
+</p>
+</section>
+<section><h2>private</h2>
+<p>true
+</p>
+</section>
+<section><h2>wlan0</h2>
+</section>
+<section><h2>ip</h2>
+<p>"1.2.3.4"
+    <code class="lang-d"></code>`
+    Instead of the slightly more verbose:
+    <code class="lang-d"></code>`
+</p>
+</section>
+<section><h2>interfaces</h2>
+<p>- name: eth0
+</p>
+</section>
+<section><h2>ip</h2>
+<p>"192.168.0.1"
+</p>
+</section>
+<section><h2>private</h2>
+<p>true
+      - name: wlan0
+</p>
+</section>
+<section><h2>ip</h2>
+<p>"1.2.3.4"
+    <code class="lang-d"></code>`
+</p>
+
+<p>    The former would require to be expressed as an associative arrays.
+    However, one major drawback of associative arrays is that they can't have
+    an initializer, which makes them cumbersome to use in the context of the
+    config filler. To remediate this issue, one may use <code class="lang-d"><span class="pun">@</span><span class="typ">Key</span><span class="pun">(</span><span class="str">"name"</span><span class="pun">)</span></code>
+    on a field (here, <code class="lang-d"><span class="pln">interfaces</span></code>) so that the mapping is flattened
+    to an array. If <code class="lang-d"><a href="../../configy/attributes/key.name.html"><span class="pln">name</span></a></code> is <code class="lang-d"><span class="kwd">null</span></code>, the key will be discarded.
+</p>
+</section>
+
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Struct SetInfo</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">configy
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module selected">
+						<a href="../../configy/attributes.html">attributes</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/exceptions.html">exceptions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/fieldref.html">fieldref</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/read.html">read</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/test.html">test</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../configy/utils.html">utils</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct SetInfo</h1><p>A field which carries informations about whether it was set or not
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">struct</span> <span class="typ">SetInfo</span>(T)
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>Some configurations may need to know which fields were set explicitly while
+    keeping defaults. An example of this is a <code class="lang-d"><span class="kwd">struct</span></code> where at least one field
+    needs to be set, such as the following:
+    <code class="lang-d"></code>`
+    public struct ProtoDuration
+    {
+        public @Optional long weeks;
+        public @Optional long days;
+        public @Optional long hours;
+        public @Optional long minutes;
+        public           long seconds = 42;
+        public @Optional long msecs;
+        public @Optional long usecs;
+        public @Optional long hnsecs;
+        public @Optional long nsecs;
+    }
+    <code class="lang-d"></code>`
+    In this case, it would be impossible to know if any field was explicitly
+    provided. Hence, the struct should be written as:
+    <code class="lang-d"></code>`
+    public struct ProtoDuration
+    {
+        public SetInfo!long weeks;
+        public SetInfo!long days;
+        public SetInfo!long hours;
+        public SetInfo!long minutes;
+        public SetInfo!long seconds = 42;
+        public SetInfo!long msecs;
+        public SetInfo!long usecs;
+        public SetInfo!long hnsecs;
+        public SetInfo!long nsecs;
+    }
+    <code class="lang-d"></code>`
+    Note that <code class="lang-d"><span class="typ">SetInfo</span></code> implies <code class="lang-d"><a href="../../configy/attributes/optional.html"><span class="typ">Optional</span></a></code>, and supports default values.
+</p>
+</section>
+
+			<section><h2>Constructors</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../configy/attributes/set_info.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(initVal, isSet)</span>
+						</td>
+						<td>Allow initialization as a field
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Fields</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../configy/attributes/set_info.set.html" class="public"><code>set</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether this field was set or not
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../configy/attributes/set_info.value.html" class="public"><code>value</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">T</span></code></td><td>Underlying data
+</td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright (c) 2019-2022 BOSAGORA Foundation
+        All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT License. See LICENSE for details.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

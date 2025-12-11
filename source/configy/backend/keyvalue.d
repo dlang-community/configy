@@ -122,7 +122,7 @@ public class KeyValueMapping : Mapping {
         return Location(this.prefix.length ? this.prefix[0 .. $ - 1] : null);
     }
     public override Type type () const scope @safe nothrow { return Type.Mapping; }
-    public override inout(KeyValueMapping) asMapping () inout scope @safe { return this; }
+    public override inout(KeyValueMapping) asMapping () inout return scope @safe { return this; }
     public override inout(Sequence) asSequence () inout scope @safe { return null; }
     public override inout(Scalar) asScalar () inout scope @safe { return null; }
 
@@ -205,7 +205,7 @@ public class SequenceOrScalar : Sequence, Scalar {
     ///
     public override inout(Mapping) asMapping () inout scope @safe { return null; }
     ///
-    public override inout(SequenceOrScalar) asSequence () inout scope @safe { return this; }
+    public override inout(SequenceOrScalar) asSequence () inout return scope @safe { return this; }
     ///
-    public override inout(SequenceOrScalar) asScalar () inout scope @safe { return this; }
+    public override inout(SequenceOrScalar) asScalar () inout return scope @safe { return this; }
 }

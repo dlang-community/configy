@@ -64,7 +64,7 @@ public class MultiMapping : Mapping {
     }
 
     ///
-    public override inout(Mapping)  asMapping () inout scope @safe { return this; }
+    public override inout(Mapping)  asMapping () inout return scope @safe { return this; }
     public override inout(Sequence) asSequence () inout scope @safe { return null; }
     public override inout(Scalar)   asScalar () inout scope @safe   { return null; }
 
@@ -118,13 +118,13 @@ private struct MultiMappingBuffer {
     private size_t idx;
 
     /// Adds a node to the buffer - skip any `null` node
-    public void add (scope Mapping node) @safe scope return {
+    public void add (Mapping node) @safe scope return {
         if (node is null) return;
         this.buffer[this.idx++] = node;
     }
 
     /// Returns: A slice of the buffer with all non-null node
-    public Mapping[] opSlice () @safe scope return {
+    public Mapping[] opSlice () @safe return {
         return this.buffer[0 .. this.idx];
     }
 

@@ -20,7 +20,7 @@ module configy.utils;
 import std.format;
 
 /// Type of sink used by the `toString`
-package alias SinkType = void delegate (in char[]) @safe;
+package alias SinkType = void delegate (const scope char[]) @safe;
 
 /// Convenience function to extend a path
 package string addPath (string opath, string newPart) @safe pure nothrow
@@ -95,7 +95,7 @@ package struct Colored (T)
         static if (is(typeof(T.init.length) : size_t))
             if (this.value.length == 0) return;
 
-        formattedWrite(sink, "%s%s%s", this.color, this.value, Reset);
+        () @trusted { formattedWrite(sink, "%s%s%s", this.color, this.value, Reset); }();
     }
 }
 

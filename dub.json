@@ -18,6 +18,7 @@
         },
         {
             "name": "unittest",
+            "dflags": ["-preview=dip1000"],
             "sourceFiles": [ "tests/unit/*.d" ]
         }
     ],

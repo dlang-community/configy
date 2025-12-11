@@ -219,5 +219,5 @@ public class SimpleScalar : Scalar {
     ///
     public override inout(Sequence) asSequence () inout scope @safe { return null; }
     ///
-    public override inout(SimpleScalar) asScalar () inout scope @safe { return this; }
+    public override inout(SimpleScalar) asScalar () inout return scope @safe { return this; }
 }
